@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gemini Text Quest Manager</title>
     <style>
         :root {
@@ -25,18 +25,25 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        html,
         body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
+        }
+
+        body {
             display: flex;
-            height: 100vh;
-            overflow: hidden;
             position: relative;
         }
 
         /* Sidebar - Game State & Settings */
         #sidebar {
             width: 380px;
+            height: 100%;
             background: var(--panel-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -56,6 +63,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .sidebar-content {
@@ -70,10 +78,12 @@
         /* Main Chat Area */
         #main-chat {
             flex: 1;
+            height: 100%;
             display: flex;
             flex-direction: column;
             background: var(--bg-color);
             min-width: 0;
+            position: relative;
         }
 
         .chat-header {
@@ -84,6 +94,23 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+            flex-shrink: 0;
+            height: 60px;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .chat-messages {
@@ -93,14 +120,16 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            min-height: 0;
         }
 
         .chat-input-area {
-            padding: 15px 20px;
+            padding: 12px 15px;
             background: var(--panel-bg);
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         /* Mobile Overlay */
@@ -163,6 +192,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .form-group {
@@ -193,6 +223,28 @@
             justify-content: space-between;
             align-items: center;
             font-weight: bold;
+        }
+
+        /* Animated Loading Spinner Icon */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            flex-shrink: 0;
+        }
+
+        .spinner.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Chat Message Styles */
@@ -266,8 +318,8 @@
         }
 
         .btn-send {
-            width: 48px !important;
-            height: 48px;
+            width: 44px !important;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -278,7 +330,7 @@
         }
 
         .btn-send svg {
-            margin-left: 4px;
+            margin-left: 3px;
         }
 
         .rel-slider {
@@ -325,13 +377,6 @@
 
             .chat-header {
                 padding: 10px 12px;
-            }
-
-            .chat-header h2 {
-                font-size: 16px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
 
             .chat-messages {
@@ -437,11 +482,11 @@
     <!-- MAIN CHAT -->
     <div id="main-chat">
         <div class="chat-header">
-            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="chat-header-title">
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Сховати/показати меню">☰</button>
                 <h2 id="currentGameTitle">Оберіть або створіть гру</h2>
             </div>
-            <span id="statusIndicator" style="font-size: 12px; color: var(--text-dim);"></span>
+            <div id="statusSpinner" class="spinner" title="Gemini генерує відповідь..."></div>
         </div>
 
         <div class="chat-messages" id="chatMessages"></div>
@@ -450,7 +495,7 @@
             <textarea id="userInput" rows="2" style="flex: 1; resize: none;"
                 placeholder="Що ти робиш або кажеш?..."></textarea>
             <button class="btn-send" onclick="sendMessage()" title="Надіслати">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
             </button>
@@ -459,7 +504,58 @@
 
     <script>
         /* ==========================================
-           0. SIDEBAR TOGGLE SYSTEM
+           0. SCENARIOS PRESETS GENERATOR
+           ========================================== */
+        const SCENARIOS_PRESETS = [
+            {
+                title: "Таємниця закинутої таверни",
+                location: "Запорошена загартована таверна «Чорний Круг»",
+                timeOfDay: "Ніч",
+                objectives: "Знайти зашифровану карту до старої шахти",
+                memory: "Ви сховалися у закинутій будівлі під час грози.",
+                pName: "Сергій", pSurname: "Мандрівник", pGender: "Чоловіча", pAge: 29, pPersonality: "Сміливий, допитливий", pApp: "Темний плащ, шпага на поясі", pSeed: "Serhii",
+                cName: "Емілі", cSurname: "Золота Лисиця", cGender: "Жіноча", cAge: 24, cPersonality: "Хитра, спостережлива", cApp: "Шкіряний обладунок, короткий клинок", cSeed: "Emily"
+            },
+            {
+                title: "Космічна станція «Оріон-9»",
+                location: "Командний місток дрейфуючого дослідницького судна",
+                timeOfDay: "Ніч",
+                objectives: "Відновити подачу кисню та запустити реактор",
+                memory: "Корабель вийшов з гіперпростору через невідомий збій.",
+                pName: "Алекс", pSurname: "Рейнер", pGender: "Чоловіча", pAge: 35, pPersonality: "Холоднокровний, інженер", pApp: "Тактичний скафандр, сліди кіптяви", pSeed: "Alex",
+                cName: "Валерія", cSurname: "Векс", cGender: "Жіноча", cAge: 27, cPersonality: "Рішуча, пілот", cApp: "Льотна куртка, планшет у руках", cSeed: "Valeria"
+            },
+            {
+                title: "Нічний туман Бейкер-стріт",
+                location: "Освітлений каміном кабінет приватного детектива",
+                timeOfDay: "Вечір",
+                objectives: "Розшифрувати зашифроване закривавлене повідомлення",
+                memory: "Невідомий гість залишив конверт і зник у тумані.",
+                pName: "Артур", pSurname: "Грей", pGender: "Чоловіча", pAge: 42, pPersonality: "Уважний до деталей, аналітик", pApp: "Твідовий костюм, кишеньковий годинник", pSeed: "Arthur",
+                cName: "Віолетта", cSurname: "Морган", cGender: "Жіноча", cAge: 30, cPersonality: "Прониклива асистентка", cApp: "Елегантна сукня, блокнот для нотаток", cSeed: "Violetta"
+            },
+            {
+                title: "Неоновий бункер 2088",
+                location: "Підпільна лабораторія під клубом Neon Pulse",
+                timeOfDay: "Ніч",
+                objectives: "Вивантажити дамп даних до прибуття загону зачистки",
+                memory: "Ви здобули корпоративний чип з таємними кресленнями.",
+                pName: "Кай", pSurname: "Скайлайн", pGender: "Чоловіча", pAge: 25, pPersonality: "Дерзкий хакер, ризиковий", pApp: "Кібер-окуляри, неонова куртка", pSeed: "Kai",
+                cName: "Рейн", cSurname: "Блейд", cGender: "Жіноча", cAge: 28, cPersonality: "Серйозна, найманець", cApp: "Хромовані імпланти, імпульсні клинки", cSeed: "Rain"
+            },
+            {
+                title: "Забуте підземелля Сонця",
+                location: "Прадавня зала кам'яних руїн",
+                timeOfDay: "Ранок",
+                objectives: "Знайти важіль для відкриття головних воріт",
+                memory: "Ви подолали пастки верхнього рівня підземелля.",
+                pName: "Ерік", pSurname: "Шторм", pGender: "Чоловіча", pAge: 31, pPersonality: "Справедливий, відважний", pApp: "Сталеві обладунки, важкий щит", pSeed: "Erik",
+                cName: "Ліра", cSurname: "Тінехід", cGender: "Жіноча", cAge: 23, cPersonality: "Скептична слідопитка", cApp: "Темний плащ, магічний амулет", cSeed: "Lira"
+            }
+        ];
+
+        /* ==========================================
+           1. SIDEBAR TOGGLE SYSTEM
            ========================================== */
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -475,7 +571,7 @@
         }
 
         /* ==========================================
-           1. API KEY, MODEL & INDEXEDDB SYSTEM
+           2. API KEY, MODEL & INDEXEDDB SYSTEM
            ========================================== */
         const DB_NAME = 'GeminiQuestDB';
         const DB_VERSION = 1;
@@ -498,7 +594,7 @@
         }
 
         function loadSelectedModel() {
-            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-2.5-flash';
+            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-3.6-flash';
             document.getElementById('modelSelect').value = saved;
         }
 
@@ -547,7 +643,7 @@
         }
 
         /* ==========================================
-           2. GAME MANAGEMENT & UI RENDERERS
+           3. GAME MANAGEMENT & UI RENDERERS
            ========================================== */
         async function refreshGameList() {
             const games = await dbGetAllGames();
@@ -579,40 +675,48 @@
         }
 
         async function createNewGame() {
-            const title = prompt("Введіть назву нової пригоди:", "Темний Ліс");
+            const preset = SCENARIOS_PRESETS[Math.floor(Math.random() * SCENARIOS_PRESETS.length)];
+            const title = prompt("Введіть назву нової пригоди:", preset.title);
             if (!title) return;
+
+            const pId = "player_" + Date.now();
+            const cId = "char_" + (Date.now() + 1);
 
             const newGame = {
                 title: title,
-                location: "Стародавній таверні на околиці",
-                timeOfDay: "Вечір",
-                objectives: "Знайти провідника для подорожі в гори",
-                memory: "Ви зустрілися у таверні після тривалої дороги.",
-                playerCharId: "player_1",
+                location: preset.location,
+                timeOfDay: preset.timeOfDay,
+                objectives: preset.objectives,
+                memory: preset.memory,
+                playerCharId: pId,
                 characters: [
                     {
-                        id: "player_1",
-                        name: "Сергій",
-                        surname: "Мандрівник",
-                        personality: "Сміливий, допитливий",
-                        appearance: "Плащ, шпага на поясі",
-                        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Serhii",
+                        id: pId,
+                        name: preset.pName,
+                        surname: preset.pSurname,
+                        gender: preset.pGender,
+                        age: preset.pAge,
+                        personality: preset.pPersonality,
+                        appearance: preset.pApp,
+                        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${preset.pSeed}`,
                         active: true,
                         relationships: {}
                     },
                     {
-                        id: "char_2",
-                        name: "Емілі",
-                        surname: "Золота Лисиця",
-                        personality: "Обережна, хитра, але вірна друзям",
-                        appearance: "Темний шкіряний обладунок, лук за спиною",
-                        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Elina",
+                        id: cId,
+                        name: preset.cName,
+                        surname: preset.cSurname,
+                        gender: preset.cGender,
+                        age: preset.cAge,
+                        personality: preset.cPersonality,
+                        appearance: preset.cApp,
+                        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${preset.cSeed}`,
                         active: true,
-                        relationships: { "player_1": 50 }
+                        relationships: { [pId]: 50 }
                     }
                 ],
                 messages: [
-                    { type: "narration", text: "Ви сидите біля каміна. Позаду чути гамір таверни, а за вікном гуде вечірній вітер." }
+                    { type: "narration", text: preset.memory + " " + preset.location + "." }
                 ]
             };
 
@@ -713,7 +817,7 @@
                     const relVal = c.relationships[currentGame.playerCharId] ?? 50;
                     relHTML = `
                 <div class="rel-slider">
-                    <label>Відносини до тебе:</label>
+                    <label>Відносини:</label>
                     <input type="range" min="0" max="100" value="${relVal}" onchange="updateRelationship('${c.id}', '${currentGame.playerCharId}', this.value)">
                     <span>${relVal}/100</span>
                 </div>
@@ -729,8 +833,29 @@
                 <button class="danger" style="padding:2px 8px;" onclick="deleteCharacter('${c.id}')">✕</button>
             </div>
 
-            <input type="text" placeholder="Ім'я" value="${c.name || ''}" onchange="updateCharData('${c.id}', 'name', this.value)">
-            <input type="text" placeholder="Прізвище" value="${c.surname || ''}" onchange="updateCharData('${c.id}', 'surname', this.value)">
+            <div class="form-group">
+                <label>Ім'я</label>
+                <input type="text" placeholder="Ім'я" value="${c.name || ''}" onchange="updateCharData('${c.id}', 'name', this.value)">
+            </div>
+
+            <div class="form-group">
+                <label>Прізвище</label>
+                <input type="text" placeholder="Прізвище" value="${c.surname || ''}" onchange="updateCharData('${c.id}', 'surname', this.value)">
+            </div>
+
+            <div class="form-group">
+                <label>Стать</label>
+                <select onchange="updateCharData('${c.id}', 'gender', this.value)">
+                    <option value="Чоловіча" ${c.gender === 'Чоловіча' ? 'selected' : ''}>Чоловіча</option>
+                    <option value="Жіноча" ${c.gender === 'Жіноча' ? 'selected' : ''}>Жіноча</option>
+                    <option value="Інша" ${c.gender === 'Інша' ? 'selected' : ''}>Інша</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Вік</label>
+                <input type="number" placeholder="Вік" value="${c.age || ''}" onchange="updateCharData('${c.id}', 'age', this.value)">
+            </div>
 
             <input type="text" placeholder="Характер" value="${c.personality || ''}" onchange="updateCharData('${c.id}', 'personality', this.value)">
             <input type="text" placeholder="Зовнішність" value="${c.appearance || ''}" onchange="updateCharData('${c.id}', 'appearance', this.value)">
@@ -766,6 +891,8 @@
                 id: id,
                 name: "Новий",
                 surname: "Персонаж",
+                gender: "Чоловіча",
+                age: 25,
                 personality: "Спокійний",
                 appearance: "Звичайний вигляд",
                 avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`,
@@ -779,7 +906,7 @@
         function updateCharData(id, key, val) {
             const c = currentGame.characters.find(char => char.id === id);
             if (c) {
-                c[key] = val;
+                c[key] = key === 'age' ? parseInt(val) || 0 : val;
                 dbSaveGame(currentGame);
 
                 if (['name', 'surname', 'avatar'].includes(key)) {
@@ -812,7 +939,6 @@
 
             if (!currentGame) return;
 
-            // Шукаємо гравця один раз для всіх повідомлень типу user
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Ти", surname: "", avatar: "" };
             const playerAvatar = playerChar.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=player`;
 
@@ -851,12 +977,13 @@
         }
 
         /* ==========================================
-           3. GEMINI API INTEGRATION & GAME ENGINE
+           4. GEMINI API INTEGRATION & GAME ENGINE
            ========================================== */
         async function sendMessage() {
             const apiKey = document.getElementById('apiKey').value;
             const selectedModel = document.getElementById('modelSelect').value;
             const inputArea = document.getElementById('userInput');
+            const spinner = document.getElementById('statusSpinner');
             const text = inputArea.value.trim();
 
             if (!apiKey) return alert("Будь ласка, вкажи Gemini API Key у боковій панелі!");
@@ -867,7 +994,7 @@
             renderMessages();
             dbSaveGame(currentGame);
 
-            document.getElementById('statusIndicator').innerText = `Gemini (${selectedModel}) аналізує квест...`;
+            spinner.classList.add('active');
 
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "" };
             const activeNPCs = currentGame.characters.filter(c => c.id !== currentGame.playerCharId && c.active);
@@ -882,13 +1009,13 @@
 - Пам'ять квесту: ${currentGame.memory}
 
 ГРАВЕЦЬ:
-- Гравець грає за: ${playerChar.name} ${playerChar.surname} (Характер: ${playerChar.personality}, Зовнішність: ${playerChar.appearance})
+- Гравець грає за: ${playerChar.name} ${playerChar.surname} (Стать: ${playerChar.gender || 'не вказано'}, Вік: ${playerChar.age || 'не вказано'}, Характер: ${playerChar.personality}, Зовнішність: ${playerChar.appearance})
 
 ПЕРСОНАЖІ ПОРУЧ (NPC):
-${activeNPCs.map(c => `- ID: "${c.id}", Ім'я: ${c.name} ${c.surname}, Характер: ${c.personality}, Відносини до гравця: ${c.relationships[playerChar.id] ?? 50}/100`).join('\n')}
+${activeNPCs.map(c => `- ID: "${c.id}", Ім'я: ${c.name} ${c.surname}, Стать: ${c.gender || 'не вказано'}, Вік: ${c.age || 'не вказано'}, Характер: ${c.personality}, Відносини до гравця: ${c.relationships[playerChar.id] ?? 50}/100`).join('\n')}
 
 ВАЖЛИВІ ПРАВИЛА:
-1. Відносини (0-100) суттєво впливають на діалоги та дії NPC (0 - ворожість, 50 - нейтральність, 100 - повна довіра/кохання).
+1. Відносини (0-100) суттєво впливають на діалоги та дії NPC (0 - ворожість, 50 - нейтральність, 100 - повна довіра/кохання). Враховуй стать та вік у зверненнях і мотивації.
 2. Повертай відповідь СТРОГО у форматованому JSON з наступною структурою:
 {
   "narration": "Опис подій, дій середовища чи загальної атмосфери (або null)",
@@ -958,7 +1085,7 @@ ${activeNPCs.map(c => `- ID: "${c.id}", Ім'я: ${c.name} ${c.surname}, Хар�
                 console.error(err);
                 alert(`Помилка API: ${err.message}`);
             } finally {
-                document.getElementById('statusIndicator').innerText = '';
+                spinner.classList.remove('active');
             }
         }
 
