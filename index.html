@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,51 +18,143 @@
             --ai-msg-bg: #181820;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; position: relative; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
 
         /* Sidebar - Game State & Settings */
-        #sidebar { 
-            width: 380px; 
-            background: var(--panel-bg); 
-            border-right: 1px solid var(--border-color); 
-            display: flex; 
-            flex-direction: column; 
+        #sidebar {
+            width: 380px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
             transition: margin-left 0.3s ease, transform 0.3s ease;
             z-index: 100;
             flex-shrink: 0;
         }
-        
+
         #sidebar.collapsed {
             margin-left: -380px;
         }
 
-        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-content { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
         /* Main Chat Area */
-        #main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg-color); min-width: 0; }
-        .chat-header { padding: 12px 20px; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .chat-input-area { padding: 15px 20px; background: var(--panel-bg); border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+        #main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+            min-width: 0;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-input-area {
+            padding: 15px 20px;
+            background: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
 
         /* Mobile Overlay */
         #sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(2px);
             z-index: 90;
         }
 
         /* UI Components */
-        input, select, textarea, button { background: #282832; border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 12px; border-radius: 6px; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent-color); outline: none; }
-        button { background: var(--accent-color); cursor: pointer; border: none; font-weight: bold; transition: background 0.2s; }
-        button:hover { background: var(--accent-hover); }
-        button.danger { background: #d93838; }
-        button.danger:hover { background: #b82525; }
+        input,
+        select,
+        textarea,
+        button {
+            background: #282832;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        button {
+            background: var(--accent-color);
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button.danger {
+            background: #d93838;
+        }
+
+        button.danger:hover {
+            background: #b82525;
+        }
 
         .btn-toggle-sidebar {
             padding: 6px 12px;
@@ -72,27 +165,141 @@
             justify-content: center;
         }
 
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: bold; }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-        .card { background: #252530; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .form-group label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .card {
+            background: #252530;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
 
         /* Chat Message Styles */
-        .message { padding: 12px 16px; border-radius: 8px; max-width: 85%; line-height: 1.5; word-break: break-word; }
-        .message.user { background: var(--user-msg-bg); align-self: flex-end; border-bottom-right-radius: 2px; }
-        .message.narration { background: var(--ai-msg-bg); border-left: 3px solid var(--accent-color); align-self: flex-start; width: 100%; font-style: italic; color: #d0d0e0; }
-        .message.character { background: var(--ai-msg-bg); border: 1px solid var(--border-color); align-self: flex-start; display: flex; gap: 12px; width: 90%; }
-        
-        .char-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #333; flex-shrink: 0; border: 2px solid var(--accent-color); }
-        .char-content { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-        .char-name { font-weight: bold; color: var(--accent-color); font-size: 14px; }
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 90%;
+            line-height: 1.5;
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-        .rel-slider { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-        .rel-slider input { flex: 1; }
+        .message.user {
+            background: var(--user-msg-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            border: 1px solid var(--border-color);
+        }
 
-        .row { display: flex; gap: 8px; }
-        .row > * { flex: 1; }
+        .message.narration {
+            background: var(--ai-msg-bg);
+            border-left: 3px solid var(--accent-color);
+            align-self: flex-start;
+            width: 100%;
+            font-style: italic;
+            color: #d0d0e0;
+        }
+
+        .message.character {
+            background: var(--ai-msg-bg);
+            border: 1px solid var(--border-color);
+            align-self: flex-start;
+        }
+
+        .char-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .user-header {
+            justify-content: flex-end;
+        }
+
+        .char-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #333;
+            flex-shrink: 0;
+            border: 2px solid var(--accent-color);
+        }
+
+        .char-name {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 14px;
+        }
+
+        .message.user .char-name {
+            color: var(--text-color);
+        }
+
+        .char-text {
+            white-space: pre-wrap;
+        }
+
+        .btn-send {
+            width: 48px !important;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .btn-send svg {
+            margin-left: 4px;
+        }
+
+        .rel-slider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .rel-slider input {
+            flex: 1;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row>* {
+            flex: 1;
+        }
 
         /* Responsive Mobile Layout */
         @media (max-width: 768px) {
@@ -105,7 +312,7 @@
                 max-width: 340px;
                 transform: translateX(-100%);
                 margin-left: 0 !important;
-                box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+                box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
             }
 
             #sidebar.open {
@@ -140,13 +347,10 @@
             .chat-input-area {
                 padding: 10px;
             }
-
-            .chat-input-area button {
-                width: 80px !important;
-            }
         }
     </style>
 </head>
+
 <body>
 
     <!-- OVERLAY FOR MOBILE -->
@@ -159,7 +363,7 @@
                 <label>Gemini API Key</label>
                 <input type="password" id="apiKey" placeholder="Введи свій API Key..." oninput="saveApiKey(this.value)">
             </div>
-            
+
             <div class="form-group">
                 <label>Модель Gemini</label>
                 <select id="modelSelect" onchange="saveSelectedModel(this.value)">
@@ -215,7 +419,8 @@
             <!-- Memory Log -->
             <div class="card">
                 <div class="card-header">🧠 Пам'ять квесту</div>
-                <textarea id="stateMemory" rows="4" placeholder="Основні моменти..." onchange="updateGameState()"></textarea>
+                <textarea id="stateMemory" rows="4" placeholder="Основні моменти..."
+                    onchange="updateGameState()"></textarea>
             </div>
 
             <!-- Characters Manager -->
@@ -242,277 +447,282 @@
         <div class="chat-messages" id="chatMessages"></div>
 
         <div class="chat-input-area">
-            <textarea id="userInput" rows="2" style="flex: 1; resize: none;" placeholder="Що ти робиш або кажеш?..."></textarea>
-            <button onclick="sendMessage()" style="width: 100px;">Надіслати</button>
+            <textarea id="userInput" rows="2" style="flex: 1; resize: none;"
+                placeholder="Що ти робиш або кажеш?..."></textarea>
+            <button class="btn-send" onclick="sendMessage()" title="Надіслати">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+            </button>
         </div>
     </div>
 
-<script>
-/* ==========================================
-   0. SIDEBAR TOGGLE SYSTEM
-   ========================================== */
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const isMobile = window.innerWidth <= 768;
+    <script>
+        /* ==========================================
+           0. SIDEBAR TOGGLE SYSTEM
+           ========================================== */
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isMobile = window.innerWidth <= 768;
 
-    if (isMobile) {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('active');
-    } else {
-        sidebar.classList.toggle('collapsed');
-    }
-}
-
-/* ==========================================
-   1. API KEY, MODEL & INDEXEDDB SYSTEM
-   ========================================== */
-const DB_NAME = 'GeminiQuestDB';
-const DB_VERSION = 1;
-let db = null;
-let currentGame = null;
-
-function saveApiKey(key) {
-    localStorage.setItem('gemini_api_key', key);
-}
-
-function loadApiKey() {
-    const saved = localStorage.getItem('gemini_api_key');
-    if (saved) {
-        document.getElementById('apiKey').value = saved;
-    }
-}
-
-function saveSelectedModel(model) {
-    localStorage.setItem('gemini_selected_model', model);
-}
-
-function loadSelectedModel() {
-    const saved = localStorage.getItem('gemini_selected_model') || 'gemini-2.5-flash';
-    document.getElementById('modelSelect').value = saved;
-}
-
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('games')) {
-                db.createObjectStore('games', { keyPath: 'id', autoIncrement: true });
+            if (isMobile) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            } else {
+                sidebar.classList.toggle('collapsed');
             }
-        };
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve();
-        };
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
+        }
 
-function dbGetAllGames() {
-    return new Promise((resolve) => {
-        const tx = db.transaction('games', 'readonly');
-        const store = tx.objectStore('games');
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result);
-    });
-}
+        /* ==========================================
+           1. API KEY, MODEL & INDEXEDDB SYSTEM
+           ========================================== */
+        const DB_NAME = 'GeminiQuestDB';
+        const DB_VERSION = 1;
+        let db = null;
+        let currentGame = null;
 
-function dbSaveGame(game) {
-    return new Promise((resolve) => {
-        const tx = db.transaction('games', 'readwrite');
-        const store = tx.objectStore('games');
-        const req = store.put(game);
-        req.onsuccess = () => resolve(req.result);
-    });
-}
+        function saveApiKey(key) {
+            localStorage.setItem('gemini_api_key', key);
+        }
 
-function dbDeleteGame(id) {
-    return new Promise((resolve) => {
-        const tx = db.transaction('games', 'readwrite');
-        const store = tx.objectStore('games');
-        const req = store.delete(id);
-        req.onsuccess = () => resolve();
-    });
-}
-
-/* ==========================================
-   2. GAME MANAGEMENT & UI RENDERERS
-   ========================================== */
-async function refreshGameList() {
-    const games = await dbGetAllGames();
-    const select = document.getElementById('gameSelect');
-    select.innerHTML = '';
-    
-    if (games.length === 0) {
-        select.innerHTML = '<option value="">Немає збережених ігор</option>';
-        document.getElementById('gameStatePanel').style.display = 'none';
-        document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
-        currentGame = null;
-        renderMessages();
-        return;
-    }
-
-    games.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.innerText = g.title;
-        select.appendChild(opt);
-    });
-
-    if (!currentGame && games.length > 0) {
-        select.value = games[0].id;
-        await loadSelectedGame();
-    } else if (currentGame) {
-        select.value = currentGame.id;
-    }
-}
-
-async function createNewGame() {
-    const title = prompt("Введіть назву нової пригоди:", "Темний Ліс");
-    if (!title) return;
-
-    const newGame = {
-        title: title,
-        location: "Стародавній таверні на околиці",
-        timeOfDay: "Вечір",
-        objectives: "Знайти провідника для подорожі в гори",
-        memory: "Ви зустрілися у таверні після тривалої дороги.",
-        playerCharId: "player_1",
-        characters: [
-            {
-                id: "player_1",
-                name: "Сергій",
-                surname: "Мандрівник",
-                personality: "Сміливий, допитливий",
-                appearance: "Плащ, шпага на поясі",
-                avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Serhii",
-                active: true,
-                relationships: {}
-            },
-            {
-                id: "char_2",
-                name: "Еліна",
-                surname: "Срібне Око",
-                personality: "Обережна, хитра, але вірна друзям",
-                appearance: "Темний шкіряний обладунок, лук за спиною",
-                avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Elina",
-                active: true,
-                relationships: { "player_1": 50 }
+        function loadApiKey() {
+            const saved = localStorage.getItem('gemini_api_key');
+            if (saved) {
+                document.getElementById('apiKey').value = saved;
             }
-        ],
-        messages: [
-            { type: "narration", text: "Ви сидите біля каміна. Позаду чути гамір таверни, а за вікном гуде вечірній вітер." }
-        ]
-    };
+        }
 
-    const id = await dbSaveGame(newGame);
-    currentGame = { ...newGame, id };
-    await refreshGameList();
-    renderAll();
-}
+        function saveSelectedModel(model) {
+            localStorage.setItem('gemini_selected_model', model);
+        }
 
-async function loadSelectedGame() {
-    const id = parseInt(document.getElementById('gameSelect').value);
-    if (!id) return;
-    const games = await dbGetAllGames();
-    currentGame = games.find(g => g.id === id);
-    renderAll();
-}
+        function loadSelectedModel() {
+            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-2.5-flash';
+            document.getElementById('modelSelect').value = saved;
+        }
 
-async function deleteCurrentGame() {
-    if (!currentGame) return;
-    if (confirm(`Видалити гру "${currentGame.title}"?`)) {
-        await dbDeleteGame(currentGame.id);
-        currentGame = null;
-        await refreshGameList();
-    }
-}
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('games')) {
+                        db.createObjectStore('games', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
 
-function updateGameState() {
-    if (!currentGame) return;
-    currentGame.location = document.getElementById('stateLocation').value;
-    currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
-    currentGame.objectives = document.getElementById('stateObjectives').value;
-    currentGame.memory = document.getElementById('stateMemory').value;
-    currentGame.playerCharId = document.getElementById('playerCharSelect').value;
+        function dbGetAllGames() {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readonly');
+                const store = tx.objectStore('games');
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+            });
+        }
 
-    dbSaveGame(currentGame);
-}
+        function dbSaveGame(game) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readwrite');
+                const store = tx.objectStore('games');
+                const req = store.put(game);
+                req.onsuccess = () => resolve(req.result);
+            });
+        }
 
-function renderAll() {
-    if (!currentGame) return;
-    document.getElementById('gameStatePanel').style.display = 'flex';
-    document.getElementById('currentGameTitle').innerText = currentGame.title;
+        function dbDeleteGame(id) {
+            return new Promise((resolve) => {
+                const tx = db.transaction('games', 'readwrite');
+                const store = tx.objectStore('games');
+                const req = store.delete(id);
+                req.onsuccess = () => resolve();
+            });
+        }
 
-    document.getElementById('stateLocation').value = currentGame.location || '';
-    document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay || 'День';
-    document.getElementById('stateObjectives').value = currentGame.objectives || '';
-    document.getElementById('stateMemory').value = currentGame.memory || '';
+        /* ==========================================
+           2. GAME MANAGEMENT & UI RENDERERS
+           ========================================== */
+        async function refreshGameList() {
+            const games = await dbGetAllGames();
+            const select = document.getElementById('gameSelect');
+            select.innerHTML = '';
 
-    renderCharacterSelectors();
-    renderCharactersList();
-    renderMessages();
-}
+            if (games.length === 0) {
+                select.innerHTML = '<option value="">Немає збережених ігор</option>';
+                document.getElementById('gameStatePanel').style.display = 'none';
+                document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
+                currentGame = null;
+                renderMessages();
+                return;
+            }
 
-function renderCharacterSelectors() {
-    const playerSelect = document.getElementById('playerCharSelect');
-    playerSelect.innerHTML = '';
-    const activeContainer = document.getElementById('activeCharsList');
-    activeContainer.innerHTML = '';
+            games.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.innerText = g.title;
+                select.appendChild(opt);
+            });
 
-    currentGame.characters.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.innerText = `${c.name || ''} ${c.surname || ''}`.trim() || 'Без імені';
-        if (c.id === currentGame.playerCharId) opt.selected = true;
-        playerSelect.appendChild(opt);
+            if (!currentGame && games.length > 0) {
+                select.value = games[0].id;
+                await loadSelectedGame();
+            } else if (currentGame) {
+                select.value = currentGame.id;
+            }
+        }
 
-        if (c.id !== currentGame.playerCharId) {
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.gap = '8px';
-            div.innerHTML = `
+        async function createNewGame() {
+            const title = prompt("Введіть назву нової пригоди:", "Темний Ліс");
+            if (!title) return;
+
+            const newGame = {
+                title: title,
+                location: "Стародавній таверні на околиці",
+                timeOfDay: "Вечір",
+                objectives: "Знайти провідника для подорожі в гори",
+                memory: "Ви зустрілися у таверні після тривалої дороги.",
+                playerCharId: "player_1",
+                characters: [
+                    {
+                        id: "player_1",
+                        name: "Сергій",
+                        surname: "Мандрівник",
+                        personality: "Сміливий, допитливий",
+                        appearance: "Плащ, шпага на поясі",
+                        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Serhii",
+                        active: true,
+                        relationships: {}
+                    },
+                    {
+                        id: "char_2",
+                        name: "Емілі",
+                        surname: "Золота Лисиця",
+                        personality: "Обережна, хитра, але вірна друзям",
+                        appearance: "Темний шкіряний обладунок, лук за спиною",
+                        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Elina",
+                        active: true,
+                        relationships: { "player_1": 50 }
+                    }
+                ],
+                messages: [
+                    { type: "narration", text: "Ви сидите біля каміна. Позаду чути гамір таверни, а за вікном гуде вечірній вітер." }
+                ]
+            };
+
+            const id = await dbSaveGame(newGame);
+            currentGame = { ...newGame, id };
+            await refreshGameList();
+            renderAll();
+        }
+
+        async function loadSelectedGame() {
+            const id = parseInt(document.getElementById('gameSelect').value);
+            if (!id) return;
+            const games = await dbGetAllGames();
+            currentGame = games.find(g => g.id === id);
+            renderAll();
+        }
+
+        async function deleteCurrentGame() {
+            if (!currentGame) return;
+            if (confirm(`Видалити гру "${currentGame.title}"?`)) {
+                await dbDeleteGame(currentGame.id);
+                currentGame = null;
+                await refreshGameList();
+            }
+        }
+
+        function updateGameState() {
+            if (!currentGame) return;
+            currentGame.location = document.getElementById('stateLocation').value;
+            currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
+            currentGame.objectives = document.getElementById('stateObjectives').value;
+            currentGame.memory = document.getElementById('stateMemory').value;
+            currentGame.playerCharId = document.getElementById('playerCharSelect').value;
+
+            dbSaveGame(currentGame);
+        }
+
+        function renderAll() {
+            if (!currentGame) return;
+            document.getElementById('gameStatePanel').style.display = 'flex';
+            document.getElementById('currentGameTitle').innerText = currentGame.title;
+
+            document.getElementById('stateLocation').value = currentGame.location || '';
+            document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay || 'День';
+            document.getElementById('stateObjectives').value = currentGame.objectives || '';
+            document.getElementById('stateMemory').value = currentGame.memory || '';
+
+            renderCharacterSelectors();
+            renderCharactersList();
+            renderMessages();
+        }
+
+        function renderCharacterSelectors() {
+            const playerSelect = document.getElementById('playerCharSelect');
+            playerSelect.innerHTML = '';
+            const activeContainer = document.getElementById('activeCharsList');
+            activeContainer.innerHTML = '';
+
+            currentGame.characters.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `${c.name || ''} ${c.surname || ''}`.trim() || 'Без імені';
+                if (c.id === currentGame.playerCharId) opt.selected = true;
+                playerSelect.appendChild(opt);
+
+                if (c.id !== currentGame.playerCharId) {
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.alignItems = 'center';
+                    div.style.gap = '8px';
+                    div.innerHTML = `
                 <input type="checkbox" id="act_${c.id}" ${c.active ? 'checked' : ''} onchange="toggleActiveChar('${c.id}')">
                 <label for="act_${c.id}">${c.name || ''} ${c.surname || ''}</label>
             `;
-            activeContainer.appendChild(div);
+                    activeContainer.appendChild(div);
+                }
+            });
         }
-    });
-}
 
-function toggleActiveChar(charId) {
-    const char = currentGame.characters.find(c => c.id === charId);
-    if (char) {
-        char.active = !char.active;
-        dbSaveGame(currentGame);
-    }
-}
+        function toggleActiveChar(charId) {
+            const char = currentGame.characters.find(c => c.id === charId);
+            if (char) {
+                char.active = !char.active;
+                dbSaveGame(currentGame);
+            }
+        }
 
-function renderCharactersList() {
-    const container = document.getElementById('charactersList');
-    container.innerHTML = '';
+        function renderCharactersList() {
+            const container = document.getElementById('charactersList');
+            container.innerHTML = '';
 
-    currentGame.characters.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        
-        let relHTML = '';
-        if (c.id !== currentGame.playerCharId) {
-            const relVal = c.relationships[currentGame.playerCharId] ?? 50;
-            relHTML = `
+            currentGame.characters.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                let relHTML = '';
+                if (c.id !== currentGame.playerCharId) {
+                    const relVal = c.relationships[currentGame.playerCharId] ?? 50;
+                    relHTML = `
                 <div class="rel-slider">
                     <label>Відносини до тебе:</label>
                     <input type="range" min="0" max="100" value="${relVal}" onchange="updateRelationship('${c.id}', '${currentGame.playerCharId}', this.value)">
                     <span>${relVal}/100</span>
                 </div>
             `;
-        }
+                }
 
-        const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
+                const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
 
-        card.innerHTML = `
+                card.innerHTML = `
             <div style="display:flex; gap:10px; align-items:center;">
                 <img src="${avatarSrc}" class="char-avatar" style="width:40px; height:40px;" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback'">
                 <strong style="flex:1;">${c.name || ''} ${c.surname || ''}</strong>
@@ -536,122 +746,133 @@ function renderCharactersList() {
 
             ${relHTML}
         `;
-        container.appendChild(card);
-    });
-}
-
-function uploadAvatarFile(charId, input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            updateCharData(charId, 'avatar', e.target.result);
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function addNewCharacter() {
-    const id = 'char_' + Date.now();
-    currentGame.characters.push({
-        id: id,
-        name: "Новий",
-        surname: "Персонаж",
-        personality: "Спокійний",
-        appearance: "Звичайний вигляд",
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`,
-        active: true,
-        relationships: {}
-    });
-    dbSaveGame(currentGame);
-    renderAll();
-}
-
-function updateCharData(id, key, val) {
-    const c = currentGame.characters.find(char => char.id === id);
-    if (c) {
-        c[key] = val;
-        dbSaveGame(currentGame);
-        
-        if (['name', 'surname', 'avatar'].includes(key)) {
-            renderCharacterSelectors();
-            renderMessages();
-            renderCharactersList();
+                container.appendChild(card);
+            });
         }
-    }
-}
 
-function updateRelationship(fromId, toId, val) {
-    const c = currentGame.characters.find(char => char.id === fromId);
-    if (c) {
-        if (!c.relationships) c.relationships = {};
-        c.relationships[toId] = parseInt(val);
-        dbSaveGame(currentGame);
-        renderCharactersList();
-    }
-}
+        function uploadAvatarFile(charId, input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    updateCharData(charId, 'avatar', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
 
-function deleteCharacter(id) {
-    currentGame.characters = currentGame.characters.filter(c => c.id !== id);
-    dbSaveGame(currentGame);
-    renderAll();
-}
+        function addNewCharacter() {
+            const id = 'char_' + Date.now();
+            currentGame.characters.push({
+                id: id,
+                name: "Новий",
+                surname: "Персонаж",
+                personality: "Спокійний",
+                appearance: "Звичайний вигляд",
+                avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`,
+                active: true,
+                relationships: {}
+            });
+            dbSaveGame(currentGame);
+            renderAll();
+        }
 
-function renderMessages() {
-    const container = document.getElementById('chatMessages');
-    container.innerHTML = '';
+        function updateCharData(id, key, val) {
+            const c = currentGame.characters.find(char => char.id === id);
+            if (c) {
+                c[key] = val;
+                dbSaveGame(currentGame);
 
-    if (!currentGame) return;
+                if (['name', 'surname', 'avatar'].includes(key)) {
+                    renderCharacterSelectors();
+                    renderMessages();
+                    renderCharactersList();
+                }
+            }
+        }
 
-    currentGame.messages.forEach(m => {
-        const div = document.createElement('div');
-        if (m.type === 'user') {
-            div.className = 'message user';
-            div.innerText = m.text;
-        } else if (m.type === 'narration') {
-            div.className = 'message narration';
-            div.innerText = m.text;
-        } else if (m.type === 'character') {
-            div.className = 'message character';
-            const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "" };
-            const avatarSrc = char.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.charId || 'default'}`;
-            
-            div.innerHTML = `
-                <img src="${avatarSrc}" class="char-avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback'">
-                <div class="char-content">
-                    <span class="char-name">${char.name || ''} ${char.surname || ''}</span>
-                    <div>${m.text}</div>
+        function updateRelationship(fromId, toId, val) {
+            const c = currentGame.characters.find(char => char.id === fromId);
+            if (c) {
+                if (!c.relationships) c.relationships = {};
+                c.relationships[toId] = parseInt(val);
+                dbSaveGame(currentGame);
+                renderCharactersList();
+            }
+        }
+
+        function deleteCharacter(id) {
+            currentGame.characters = currentGame.characters.filter(c => c.id !== id);
+            dbSaveGame(currentGame);
+            renderAll();
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+
+            if (!currentGame) return;
+
+            // Шукаємо гравця один раз для всіх повідомлень типу user
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Ти", surname: "", avatar: "" };
+            const playerAvatar = playerChar.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=player`;
+
+            currentGame.messages.forEach(m => {
+                const div = document.createElement('div');
+
+                if (m.type === 'user') {
+                    div.className = 'message user';
+                    div.innerHTML = `
+                <div class="char-header user-header">
+                    <span class="char-name">${playerChar.name || ''} ${playerChar.surname || ''}</span>
+                    <img src="${playerAvatar}" class="char-avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback'">
                 </div>
+                <div class="char-text">${m.text}</div>
             `;
+                } else if (m.type === 'narration') {
+                    div.className = 'message narration';
+                    div.innerText = m.text;
+                } else if (m.type === 'character') {
+                    div.className = 'message character';
+                    const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "" };
+                    const avatarSrc = char.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.charId || 'default'}`;
+
+                    div.innerHTML = `
+                <div class="char-header">
+                    <img src="${avatarSrc}" class="char-avatar" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback'">
+                    <span class="char-name">${char.name || ''} ${char.surname || ''}</span>
+                </div>
+                <div class="char-text">${m.text}</div>
+            `;
+                }
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
         }
-        container.appendChild(div);
-    });
 
-    container.scrollTop = container.scrollHeight;
-}
+        /* ==========================================
+           3. GEMINI API INTEGRATION & GAME ENGINE
+           ========================================== */
+        async function sendMessage() {
+            const apiKey = document.getElementById('apiKey').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+            const inputArea = document.getElementById('userInput');
+            const text = inputArea.value.trim();
 
-/* ==========================================
-   3. GEMINI API INTEGRATION & GAME ENGINE
-   ========================================== */
-async function sendMessage() {
-    const apiKey = document.getElementById('apiKey').value;
-    const selectedModel = document.getElementById('modelSelect').value;
-    const inputArea = document.getElementById('userInput');
-    const text = inputArea.value.trim();
+            if (!apiKey) return alert("Будь ласка, вкажи Gemini API Key у боковій панелі!");
+            if (!text || !currentGame) return;
 
-    if (!apiKey) return alert("Будь ласка, вкажи Gemini API Key у боковій панелі!");
-    if (!text || !currentGame) return;
+            currentGame.messages.push({ type: 'user', text: text });
+            inputArea.value = '';
+            renderMessages();
+            dbSaveGame(currentGame);
 
-    currentGame.messages.push({ type: 'user', text: text });
-    inputArea.value = '';
-    renderMessages();
-    dbSaveGame(currentGame);
+            document.getElementById('statusIndicator').innerText = `Gemini (${selectedModel}) аналізує квест...`;
 
-    document.getElementById('statusIndicator').innerText = `Gemini (${selectedModel}) аналізує квест...`;
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "" };
+            const activeNPCs = currentGame.characters.filter(c => c.id !== currentGame.playerCharId && c.active);
 
-    const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "" };
-    const activeNPCs = currentGame.characters.filter(c => c.id !== currentGame.playerCharId && c.active);
-
-    const systemPrompt = `
+            const systemPrompt = `
 Ти — майстер текстового рольового квесту. Проаналізуй стан гри і дай продовження історії у JSON форматі.
 
 ВИХІДНІ ДАНІ СВІТУ:
@@ -681,73 +902,74 @@ ${activeNPCs.map(c => `- ID: "${c.id}", Ім'я: ${c.name} ${c.surname}, Хар�
 }
 `;
 
-    const payload = {
-        contents: [
-            { role: "user", parts: [{ text: systemPrompt + "\n\nДІЯ ГРАВЦЯ: " + text }] }
-        ],
-        generationConfig: {
-            responseMimeType: "application/json"
-        }
-    };
-
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const jsonText = data.candidates[0].content.parts[0].text;
-        const result = JSON.parse(jsonText);
-
-        if (result.narration) {
-            currentGame.messages.push({ type: 'narration', text: result.narration });
-        }
-
-        if (result.dialogues && Array.isArray(result.dialogues)) {
-            result.dialogues.forEach(d => {
-                currentGame.messages.push({ type: 'character', charId: d.charId, text: d.text });
-            });
-        }
-
-        if (result.relationshipChanges && Array.isArray(result.relationshipChanges)) {
-            result.relationshipChanges.forEach(change => {
-                const char = currentGame.characters.find(c => c.id === change.charId);
-                if (char) {
-                    if (!char.relationships) char.relationships = {};
-                    char.relationships[currentGame.playerCharId] = Math.max(0, Math.min(100, change.newValue));
+            const payload = {
+                contents: [
+                    { role: "user", parts: [{ text: systemPrompt + "\n\nДІЯ ГРАВЦЯ: " + text }] }
+                ],
+                generationConfig: {
+                    responseMimeType: "application/json"
                 }
-            });
+            };
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text;
+                const result = JSON.parse(jsonText);
+
+                if (result.narration) {
+                    currentGame.messages.push({ type: 'narration', text: result.narration });
+                }
+
+                if (result.dialogues && Array.isArray(result.dialogues)) {
+                    result.dialogues.forEach(d => {
+                        currentGame.messages.push({ type: 'character', charId: d.charId, text: d.text });
+                    });
+                }
+
+                if (result.relationshipChanges && Array.isArray(result.relationshipChanges)) {
+                    result.relationshipChanges.forEach(change => {
+                        const char = currentGame.characters.find(c => c.id === change.charId);
+                        if (char) {
+                            if (!char.relationships) char.relationships = {};
+                            char.relationships[currentGame.playerCharId] = Math.max(0, Math.min(100, change.newValue));
+                        }
+                    });
+                }
+
+                if (result.newMemoryEntry) {
+                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + result.newMemoryEntry;
+                }
+
+                await dbSaveGame(currentGame);
+                renderAll();
+
+            } catch (err) {
+                console.error(err);
+                alert(`Помилка API: ${err.message}`);
+            } finally {
+                document.getElementById('statusIndicator').innerText = '';
+            }
         }
 
-        if (result.newMemoryEntry) {
-            currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + result.newMemoryEntry;
-        }
-
-        await dbSaveGame(currentGame);
-        renderAll();
-
-    } catch (err) {
-        console.error(err);
-        alert(`Помилка API: ${err.message}`);
-    } finally {
-        document.getElementById('statusIndicator').innerText = '';
-    }
-}
-
-// Global App Init
-window.onload = async () => {
-    loadApiKey();
-    loadSelectedModel();
-    await initDB();
-    await refreshGameList();
-};
-</script>
+        // Global App Init
+        window.onload = async () => {
+            loadApiKey();
+            loadSelectedModel();
+            await initDB();
+            await refreshGameList();
+        };
+    </script>
 </body>
+
 </html>
