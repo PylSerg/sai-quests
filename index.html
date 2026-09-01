@@ -829,21 +829,20 @@
             }
         }
 
-        function updateRelBadgeUI(charId, val) {
-            const num = parseInt(val) || 0;
-            const badge = document.getElementById(`rel_badge_${charId}`);
-            if (badge) {
-                badge.className = `rel-badge ${getRelClass(num)}`;
-                badge.innerText = `${getRelIcon(num)} ${num}%`;
-            }
-        }
-
-        function updateOtherRelBadgeUI(charId, targetId, val) {
+        function updateTargetRelBadgeUI(charId, targetId, val) {
             const num = parseInt(val) || 0;
             const badge = document.getElementById(`rel_badge_${charId}_${targetId}`);
             if (badge) {
                 badge.className = `rel-badge ${getRelClass(num)}`;
                 badge.innerText = `${getRelIcon(num)} ${num}%`;
+                badge.title = getRelDescription(num);
+            }
+            if (currentGame && targetId === currentGame.playerCharId) {
+                const summaryBadge = document.getElementById(`summary_rel_badge_${charId}`);
+                if (summaryBadge) {
+                    summaryBadge.className = `rel-badge ${getRelClass(num)}`;
+                    summaryBadge.innerText = `${getRelIcon(num)} ${num}%`;
+                }
             }
         }
 
@@ -1255,28 +1254,32 @@
                 const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
 
                 const summaryRel = !isPlayer
-                    ? `<span class="rel-badge ${getRelClass(relVal)}" style="margin-left:auto; margin-right:6px;">${getRelIcon(relVal)} ${relVal}%</span>`
+                    ? `<span class="rel-badge ${getRelClass(relVal)}" id="summary_rel_badge_${c.id}" style="margin-left:auto; margin-right:6px;">${getRelIcon(relVal)} ${relVal}%</span>`
                     : `<span style="font-size:11px; opacity:0.7; margin-left:auto; margin-right:6px;">(Гравець)</span>`;
 
-                // Sub-section for relations to other NPCs
-                const otherNPCs = currentGame.characters.filter(other => other.id !== c.id && other.id !== currentGame.playerCharId);
-                const otherNPCsHTML = otherNPCs.length > 0 ? `
-                    <details style="margin-top:6px; padding:6px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg);">
-                        <summary style="font-size:12px; cursor:pointer; font-weight:bold;">👥 Відношення до інших NPC</summary>
-                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-                            ${otherNPCs.map(other => {
-                                const oRel = getRelation(c, other.id);
+                // Relationships to ALL other characters in the game
+                const allOtherCharacters = currentGame.characters.filter(other => other.id !== c.id);
+                const relationshipsHTML = allOtherCharacters.length > 0 ? `
+                    <div class="form-group" style="padding:10px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); margin-top:6px;">
+                        <div style="font-weight:bold; font-size:12px; margin-bottom:8px; color:var(--accent-color); display:flex; align-items:center; gap:6px;">
+                            <span>❤️ Відношення до персонажів</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            ${allOtherCharacters.map(target => {
+                                const targetRel = getRelation(c, target.id);
+                                const isTargetPlayer = target.id === currentGame.playerCharId;
+                                const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim();
                                 return `
-                                <div class="form-group">
+                                <div style="display:flex; flex-direction:column; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05);">
                                     <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                                        <span>До ${other.name} ${other.surname}:</span>
-                                        <span class="rel-badge ${getRelClass(oRel)}" id="rel_badge_${c.id}_${other.id}">${getRelIcon(oRel)} ${oRel}%</span>
+                                        <span>До <strong>${targetLabel}</strong>:</span>
+                                        <span class="rel-badge ${getRelClass(targetRel)}" id="rel_badge_${c.id}_${target.id}" title="${getRelDescription(targetRel)}">${getRelIcon(targetRel)} ${targetRel}%</span>
                                     </div>
-                                    <input type="range" min="0" max="100" value="${oRel}" oninput="updateCharRelation('${c.id}', '${other.id}', this.value); updateOtherRelBadgeUI('${c.id}', '${other.id}', this.value);">
+                                    ${!currentGame.isStarted ? `<input type="range" min="0" max="100" value="${targetRel}" style="margin-top:2px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${target.id}', this.value); updateTargetRelBadgeUI('${c.id}', '${target.id}', this.value);">` : ''}
                                 </div>`;
                             }).join('')}
                         </div>
-                    </details>
+                    </div>
                 ` : '';
 
                 details.innerHTML = `
@@ -1316,16 +1319,7 @@
                             <input type="text" value="${c.role || ''}" onchange="updateCharData('${c.id}', 'role', this.value)">
                         </div>
 
-                        ${!isPlayer ? `
-                        <div class="form-group" style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg);">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <label style="margin:0;">Відношення до вас (${playerChar.name})</label>
-                                <span class="rel-badge ${getRelClass(relVal)}" id="rel_badge_${c.id}">${getRelIcon(relVal)} ${relVal}%</span>
-                            </div>
-                            <input type="range" min="0" max="100" value="${relVal}" style="margin-top:6px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${currentGame.playerCharId}', this.value); updateRelBadgeUI('${c.id}', this.value);">
-                        </div>
-                        ${otherNPCsHTML}
-                        ` : ''}
+                        ${relationshipsHTML}
 
                         <div class="form-group">
                             <label>Характер (Ключовий для ШІ)</label>
@@ -1580,11 +1574,31 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, йогоїзм, імпульсивність мають чітко проявлятися).
 2. ЧАС ДОБИ: Дій згідно з поточним часом доби.
 3. ВІДНОШЕННЯ (0-100%): Враховуй поточний рівень симпатії/довіри між персонажами.
-4. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
+4. НОВІ ПЕРСОНАЖІ: Якщо на старті з'являються додаткові особи (наприклад, вороги, вартові, свідки), опиши їх у масиві "newCharacters".
+   Встанови "initialRelationToPlayer" (0-100%):
+   - Вороги, розбійники, монстри: 0-20% (ворожість/ненависть)
+   - Підозрілі чужинці: 25-40%
+   - Нейтральні містяни: 45-55%
+   - Союзники/врятовані: 60-80%
+5. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
 
 Поверни JSON:
 {
   "messages": [{ "type": "narration", "text": "Опис початкової ситуації..." }],
+  "newCharacters": [
+    {
+      "id": "char_id",
+      "name": "Ім'я",
+      "surname": "Прізвище",
+      "race": "Людина/Ельф...",
+      "gender": "Чоловіча/Жіноча/Інша",
+      "age": 30,
+      "role": "Роль",
+      "personality": "Характер",
+      "appearance": "Зовнішність",
+      "initialRelationToPlayer": 15
+    }
+  ] або null,
   "updatedMemory": "Оновлена пам'ять або null",
   "updatedObjectives": "Оновлені цілі або null",
   "updatedRelations": null,
@@ -1608,6 +1622,35 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 
                 currentGame.isStarted = true;
                 currentGame.messages = [];
+
+                // Add any new characters created at start
+                if (result.newCharacters && Array.isArray(result.newCharacters)) {
+                    result.newCharacters.forEach(nc => {
+                        if (!nc || !nc.name) return;
+                        const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+                        let initRel = 50;
+                        if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
+                            initRel = Math.max(0, Math.min(100, parseInt(nc.initialRelationToPlayer) || 50));
+                        } else if (nc.role && /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(nc.role)) {
+                            initRel = 15;
+                        }
+
+                        const newCharObj = {
+                            id: newId,
+                            name: nc.name,
+                            surname: nc.surname || "",
+                            race: nc.race || "Людина",
+                            gender: nc.gender || "Інша",
+                            age: parseInt(nc.age) || 25,
+                            role: nc.role || "Незнайомець",
+                            personality: nc.personality || "Звичайний",
+                            appearance: nc.appearance || "Звичайна",
+                            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
+                            relations: { [currentGame.playerCharId]: initRel }
+                        };
+                        currentGame.characters.push(newCharObj);
+                    });
+                }
 
                 if (result.messages && Array.isArray(result.messages)) {
                     result.messages.forEach(msg => {
@@ -1668,9 +1711,16 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
      Формат: { "ID_персонажа_джерела": { "ID_цілі": нове_число_від_0_до_100 } }
      Наприклад: { "${otherCharacters[0] ? otherCharacters[0].id : 'char_id'}": { "${playerChar.id}": 42 } }
      Якщо відношення не змінилися, поверни null.
-3. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
-4. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
-5. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+3. ПОЯВА НОВИХ ПЕРСОНАЖІВ (НОВІ ВОРОГИ / СОЮЗНИКИ / НЕЗНАЙОМЦІ):
+   Якщо в сцені з'являється новий персонаж, обов'язково додай його опис у масив "newCharacters".
+   Встанови його "initialRelationToPlayer" (0-100%) відповідно до контексту:
+   - Вороги, розбійники, агресивні монстри, вбивці: 0-20% (ворожість / ненависть).
+   - Підозрілі вартові, холодні чужинці, конкуренти: 25-40% (настороженість / підозра).
+   - Звичайні містяни, нейтральні торговці: 45-55% (нейтральне).
+   - Врятовані, потенційні союзники, друзі: 60-80% (прихильність / вдячність).
+4. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
+5. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
+6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
 
 ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
 ${formatRecentHistory(8)}
@@ -1684,6 +1734,20 @@ ${formatRecentHistory(8)}
     { "type": "narration", "text": "Художній опис подій, наслідків дій та оточення..." },
     { "type": "character", "charId": "ID персонажа з переліку вище", "charName": "Ім'я", "text": "Пряма мова персонажа, суворо витримана в його унікальному характері..." }
   ],
+  "newCharacters": [
+    {
+      "id": "char_новий_id",
+      "name": "Ім'я",
+      "surname": "Прізвище",
+      "race": "Раса",
+      "gender": "Чоловіча/Жіноча/Інша",
+      "age": 28,
+      "role": "Роль (наприклад: Головоріз, Вартовий, Торговець)",
+      "personality": "Характер",
+      "appearance": "Зовнішність",
+      "initialRelationToPlayer": 15
+    }
+  ] або null,
   "updatedRelations": { "ID_персонажа": { "ID_цілі": 55 } } або null,
   "newLocation": "Нова назва локації, якщо відбулося переміщення (наприклад: 'Тропа через Темний Ліс') або null",
   "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
@@ -1705,6 +1769,35 @@ ${formatRecentHistory(8)}
                 const data = await response.json();
                 const result = JSON.parse(data.candidates[0].content.parts[0].text);
 
+                // Add any newly introduced characters from AI
+                if (result.newCharacters && Array.isArray(result.newCharacters)) {
+                    result.newCharacters.forEach(nc => {
+                        if (!nc || !nc.name) return;
+                        const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+                        let initRel = 50;
+                        if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
+                            initRel = Math.max(0, Math.min(100, parseInt(nc.initialRelationToPlayer) || 50));
+                        } else if (nc.role && /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(nc.role)) {
+                            initRel = 15;
+                        }
+
+                        const newCharObj = {
+                            id: newId,
+                            name: nc.name,
+                            surname: nc.surname || "",
+                            race: nc.race || "Людина",
+                            gender: nc.gender || "Інша",
+                            age: parseInt(nc.age) || 25,
+                            role: nc.role || "Незнайомець",
+                            personality: nc.personality || "Звичайний",
+                            appearance: nc.appearance || "Звичайна",
+                            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
+                            relations: { [currentGame.playerCharId]: initRel }
+                        };
+                        currentGame.characters.push(newCharObj);
+                    });
+                }
+
                 if (result.messages && Array.isArray(result.messages)) {
                     result.messages.forEach(msg => {
                         if (msg.type === 'narration') {
@@ -1716,8 +1809,20 @@ ${formatRecentHistory(8)}
                             }
                             if (!targetChar) {
                                 const newId = 'char_' + Date.now();
+                                const roleName = msg.charName || "Незнайомець";
+                                const isEnemy = /ворог|розбійник|бандит|вбивця|монстр|культист|нападник/i.test(roleName);
                                 targetChar = {
-                                    id: newId, name: msg.charName || "Незнайомець", surname: "", race: "Людина", gender: "Інша", age: 30, role: "Незнайомець", personality: "", appearance: "", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`, relations: {}
+                                    id: newId,
+                                    name: msg.charName || "Незнайомець",
+                                    surname: "",
+                                    race: "Людина",
+                                    gender: "Інша",
+                                    age: 30,
+                                    role: roleName,
+                                    personality: isEnemy ? "Ворожий та агресивний" : "Спокійний",
+                                    appearance: "",
+                                    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
+                                    relations: { [currentGame.playerCharId]: isEnemy ? 15 : 50 }
                                 };
                                 currentGame.characters.push(targetChar);
                             }
