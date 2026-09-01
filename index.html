@@ -701,8 +701,8 @@
                 timeOfDay: "Ніч",
                 objectives: "Знайти зашифровану карту до старої шахти",
                 memory: "Ви сховалися у закинутій будівлі під час грози.",
-                pName: "Сергій", pSurname: "Мандрівник", pGender: "Чоловіча", pAge: 29, pRole: "Шукач пригод", pPersonality: "Сміливий, допитливий", pApp: "Темний плащ, шпага на поясі", pSeed: "Serhii",
-                cName: "Емілі", cSurname: "Золота Лисиця", cGender: "Жіноча", cAge: 24, cRole: "Здібна злодійка", cPersonality: "Хитра, спостережлива", cApp: "Шкіряний обладунок, короткий клинок", cSeed: "Emily"
+                pName: "Сергій", pSurname: "Мандрівник", pRace: "Людина", pGender: "Чоловіча", pAge: 29, pRole: "Шукач пригод", pPersonality: "Сміливий, допитливий", pApp: "Темний плащ, шпага на поясі", pSeed: "Serhii",
+                cName: "Емілі", cSurname: "Золота Лисиця", cRace: "Людина", cGender: "Жіноча", cAge: 24, cRole: "Здібна злодійка", cPersonality: "Горда егоїстка, допитлива, кмітлива, імпульсивна та закохана у стародавні таємниці, гостра на язик", cApp: "Шкіряний обладунок, короткий клинок", cSeed: "Emily"
             }
         ];
 
@@ -780,11 +780,17 @@
             }
         }
 
-        /* Auto Textarea Height */
+        /* Auto Textarea Height & Enter key submit */
         const userInput = document.getElementById('userInput');
         userInput.addEventListener('input', () => {
             userInput.style.height = 'auto';
             userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
+        });
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         });
 
         /* ==========================================
@@ -801,7 +807,7 @@
 
         function saveSelectedModel(model) { localStorage.setItem('gemini_selected_model', model); }
         function loadSelectedModel() {
-            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-2.5-flash';
+            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-3.7-flash';
             document.getElementById('modelSelect').value = saved;
         }
 
@@ -875,6 +881,7 @@
                     currentGame = { ...importedGame, id };
                     await refreshGameList();
                     renderAll();
+                    await checkAndAutoRespond();
                     alert("Гру успішно імпортовано!");
                 } catch (err) {
                     alert("Помилка читання JSON файлу: " + err.message);
@@ -932,8 +939,8 @@
                     const promptGen = `Створи початковий світ та 2 головних персонажів для квесту: "${title}". Поверни JSON з полями:
                     {
                       "location": "опис локації", "timeOfDay": "Ранок або День або Вечір або Ніч", "objectives": "цілі", "memory": "пам'ять",
-                      "maleCharacter": { "name": "", "surname": "", "age": 25, "role": "", "personality": "", "appearance": "", "seed": "m1" },
-                      "femaleCharacter": { "name": "", "surname": "", "age": 24, "role": "", "personality": "", "appearance": "", "seed": "f1" }
+                      "maleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 25, "role": "", "personality": "", "appearance": "", "seed": "m1" },
+                      "femaleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 24, "role": "", "personality": "", "appearance": "", "seed": "f1" }
                     }`;
 
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
@@ -962,8 +969,8 @@
                     timeOfDay: defaultPreset.timeOfDay,
                     objectives: defaultPreset.objectives,
                     memory: defaultPreset.memory,
-                    maleCharacter: { name: defaultPreset.pName, surname: defaultPreset.pSurname, age: defaultPreset.pAge, role: defaultPreset.pRole, personality: defaultPreset.pPersonality, appearance: defaultPreset.pApp, seed: defaultPreset.pSeed },
-                    femaleCharacter: { name: defaultPreset.cName, surname: defaultPreset.cSurname, age: defaultPreset.cAge, role: defaultPreset.cRole, personality: defaultPreset.cPersonality, appearance: defaultPreset.cApp, seed: defaultPreset.cSeed }
+                    maleCharacter: { name: defaultPreset.pName, surname: defaultPreset.pSurname, race: defaultPreset.pRace, age: defaultPreset.pAge, role: defaultPreset.pRole, personality: defaultPreset.pPersonality, appearance: defaultPreset.pApp, seed: defaultPreset.pSeed },
+                    femaleCharacter: { name: defaultPreset.cName, surname: defaultPreset.cSurname, race: defaultPreset.cRace, age: defaultPreset.cAge, role: defaultPreset.cRole, personality: defaultPreset.cPersonality, appearance: defaultPreset.cApp, seed: defaultPreset.cSeed }
                 };
             }
 
@@ -980,14 +987,14 @@
                 isStarted: false,
                 characters: [
                     {
-                        id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.maleCharacter.seed}`
+                        id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.maleCharacter.seed}`
                     },
                     {
-                        id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.femaleCharacter.seed}`
+                        id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.femaleCharacter.seed}`
                     }
                 ],
                 messages: [
-                    { type: "narration", text: `Світ створено. Персонажі: ${gameData.maleCharacter.name} та ${gameData.femaleCharacter.name}. Натисніть «Почати гру».` }
+                    { type: "narration", text: `Світ створено. Персонажі: ${gameData.maleCharacter.name} (${gameData.maleCharacter.race || 'Людина'}) та ${gameData.femaleCharacter.name} (${gameData.femaleCharacter.race || 'Людина'}). Натисніть «Почати гру».` }
                 ]
             };
 
@@ -1003,6 +1010,18 @@
             const games = await dbGetAllGames();
             currentGame = games.find(g => g.id === id);
             renderAll();
+            await checkAndAutoRespond();
+        }
+
+        /* Check if last message is from user and trigger auto-response on load */
+        async function checkAndAutoRespond() {
+            if (!currentGame || !currentGame.isStarted || isGenerating) return;
+            if (currentGame.messages && currentGame.messages.length > 0) {
+                const lastMsg = currentGame.messages[currentGame.messages.length - 1];
+                if (lastMsg.type === 'user') {
+                    await callGemini(lastMsg.text);
+                }
+            }
         }
 
         async function deleteCurrentGame() {
@@ -1058,7 +1077,8 @@
             currentGame.characters.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.innerText = `${c.name || ''} ${c.surname || ''} (${c.gender || ''})`.trim();
+                const raceStr = c.race ? `${c.race}, ` : '';
+                opt.innerText = `${c.name || ''} ${c.surname || ''} (${raceStr}${c.gender || ''})`.trim();
                 if (c.id === currentGame.playerCharId) opt.selected = true;
                 playerSelect.appendChild(opt);
             });
@@ -1078,7 +1098,7 @@
                 details.innerHTML = `
                     <summary>
                         <img src="${avatarSrc}" class="char-avatar" style="width:28px; height:28px;">
-                        <span style="flex:1;">${c.name || ''} ${c.surname || ''}</span>
+                        <span style="flex:1;">${c.name || ''} ${c.surname || ''} ${c.race ? `(${c.race})` : ''}</span>
                         <button class="danger" style="padding:1px 6px; font-size:12px;" onclick="deleteCharacter(event, '${c.id}')">✕</button>
                     </summary>
                     <div class="char-details-body">
@@ -1089,6 +1109,10 @@
                         <div class="form-group">
                             <label>Прізвище</label>
                             <input type="text" value="${c.surname || ''}" onchange="updateCharData('${c.id}', 'surname', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Раса</label>
+                            <input type="text" value="${c.race || 'Людина'}" placeholder="Людина, Ельф, Дворф..." onchange="updateCharData('${c.id}', 'race', this.value)">
                         </div>
                         <div class="form-group">
                             <label>Стать</label>
@@ -1103,16 +1127,16 @@
                             <input type="number" value="${c.age || ''}" onchange="updateCharData('${c.id}', 'age', this.value)">
                         </div>
                         <div class="form-group">
-                            <label>Роль</label>
+                            <label>Роль / Фах</label>
                             <input type="text" value="${c.role || ''}" onchange="updateCharData('${c.id}', 'role', this.value)">
                         </div>
                         <div class="form-group">
-                            <label>Характер</label>
-                            <textarea rows="3" onchange="updateCharData('${c.id}', 'personality', this.value)">${c.personality || ''}</textarea>
+                            <label>Характер (Ключовий для ШІ)</label>
+                            <textarea rows="3" placeholder="Опишіть манеру, темперамент, звички, недоліки..." onchange="updateCharData('${c.id}', 'personality', this.value)">${c.personality || ''}</textarea>
                         </div>
                         <div class="form-group">
                             <label>Зовнішність</label>
-                            <textarea rows="3" onchange="updateCharData('${c.id}', 'appearance', this.value)">${c.appearance || ''}</textarea>
+                            <textarea rows="3" placeholder="Зріст, одяг, зброя, особливі прикмети..." onchange="updateCharData('${c.id}', 'appearance', this.value)">${c.appearance || ''}</textarea>
                         </div>
                         <div class="form-group">
                             <label>Аватар</label>
@@ -1139,7 +1163,7 @@
         function addNewCharacter() {
             const id = 'char_' + Date.now();
             currentGame.characters.push({
-                id: id, name: "Новий", surname: "Персонаж", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`
+                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`
             });
             dbSaveGame(currentGame);
             renderAll();
@@ -1150,7 +1174,7 @@
             if (c) {
                 c[key] = key === 'age' ? parseInt(val) || 0 : val;
                 dbSaveGame(currentGame);
-                if (['name', 'surname', 'avatar'].includes(key)) {
+                if (['name', 'surname', 'race', 'avatar'].includes(key)) {
                     renderCharacterSelectors();
                     renderMessages();
                 }
@@ -1164,7 +1188,39 @@
             renderAll();
         }
 
-        /* Message Rendering & Editing Last User Message */
+        /* Helper to format full character profile for Gemini */
+        function formatCharacterDetails(c, isPlayer = false) {
+            return `• ${isPlayer ? '[ГРАВЕЦЬ] ' : ''}ID: "${c.id}"
+  - Ім'я: ${c.name || ''} ${c.surname || ''}
+  - Раса: ${c.race || 'Людина'}
+  - Стать: ${c.gender || 'Невідома'}
+  - Вік: ${c.age || 'Невідомий'}
+  - Роль / фах: ${c.role || 'Невідомо'}
+  - ХАРАКТЕР (НАЙВИЩИЙ ПРІОРИТЕТ): ${c.personality || 'Звичайний'}
+  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}`;
+        }
+
+        /* Helper to format recent conversation history */
+        function formatRecentHistory(maxMessages = 10) {
+            if (!currentGame || !currentGame.messages || currentGame.messages.length === 0) return "Історія поки що порожня.";
+            const slice = currentGame.messages.slice(-maxMessages);
+            return slice.map(m => {
+                if (m.type === 'user') {
+                    const p = currentGame.characters.find(c => c.id === currentGame.playerCharId);
+                    const name = p ? `${p.name} ${p.surname}` : 'Гравець';
+                    return `[${name}]: ${m.text}`;
+                } else if (m.type === 'narration') {
+                    return `[Оповідач]: ${m.text}`;
+                } else if (m.type === 'character') {
+                    const c = currentGame.characters.find(char => char.id === m.charId);
+                    const name = c ? `${c.name} ${c.surname}` : (m.charName || 'Персонаж');
+                    return `[${name}]: ${m.text}`;
+                }
+                return m.text;
+            }).join('\n');
+        }
+
+        /* Message Rendering & Editing Last User Message in Input */
         function renderMessages() {
             const container = document.getElementById('chatMessages');
             container.innerHTML = '';
@@ -1190,7 +1246,7 @@
                     const isLastUser = (idx === lastUserIdx);
                     div.innerHTML = `
                         <div class="char-header user-header">
-                            ${isLastUser ? `<button class="btn-edit-msg" onclick="editLastUserMessage(${idx})" title="Редагувати">✏️</button>` : ''}
+                            ${isLastUser ? `<button class="btn-edit-msg" onclick="editLastUserMessage(${idx})" title="Редагувати в полі вводу">✏️</button>` : ''}
                             <span class="char-name">${playerChar.name || ''} ${playerChar.surname || ''}</span>
                             <img src="${playerAvatar}" class="char-avatar" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback';">
                         </div>
@@ -1261,18 +1317,22 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        /* Edit last user message directly inside the input box */
         async function editLastUserMessage(index) {
+            if (!currentGame || !currentGame.messages[index]) return;
             const oldText = currentGame.messages[index].text;
-            const newText = prompt("Редагувати останнє повідомлення:", oldText);
-            if (!newText || newText === oldText) return;
 
-            // Remove all messages after this edited message
+            // Remove this message and subsequent messages
             currentGame.messages = currentGame.messages.slice(0, index);
-            currentGame.messages.push({ type: 'user', text: newText });
-
             await dbSaveGame(currentGame);
             renderMessages();
-            await callGemini(newText);
+
+            // Put into input field and focus
+            const inputArea = document.getElementById('userInput');
+            inputArea.value = oldText;
+            inputArea.style.height = 'auto';
+            inputArea.style.height = Math.min(inputArea.scrollHeight, 200) + 'px';
+            inputArea.focus();
         }
 
         /* ==========================================
@@ -1287,20 +1347,33 @@
 
             setStatus(true, "Генерація старту пригоди...");
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || currentGame.characters[0];
+            const otherCharacters = currentGame.characters.filter(c => c.id !== playerChar.id);
 
             const systemPrompt = `
-Ти — майстер текстового квесту. Згенеруй стартовий опис ситуації.
-НАЗВА: ${currentGame.title} | Локація: ${currentGame.location} | Час доби: ${currentGame.timeOfDay}
-Цілі: ${currentGame.objectives} | Пам'ять: ${currentGame.memory}
+Ти — майстер інтерактивного рольового квесту.
+НАЗВА КВЕСТУ: ${currentGame.title}
+ПОТОЧНА ЛОКАЦІЯ: ${currentGame.location}
+ПОТОЧНИЙ ЧАС ДОБИ: ${currentGame.timeOfDay} (Обов'язково відповідай цьому часу доби!)
+ЦІЛІ КВЕСТУ: ${currentGame.objectives}
+ПАМ'ЯТЬ КВЕСТУ: ${currentGame.memory}
+
 ПЕРСОНАЖІ:
-${currentGame.characters.map(c => `- ${c.name} ${c.surname} (${c.gender}, ${c.role})`).join('\n')}
-Гравець: ${playerChar.name} ${playerChar.surname}
+${formatCharacterDetails(playerChar, true)}
+
+${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
+
+ПРАВИЛА:
+1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, егоїзм, імпульсивність мають чітко проявлятися).
+2. ЧАС ДОБИ: Дій згідно з поточним часом доби.
+3. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
 
 Поверни JSON:
 {
-  "messages": [{ "type": "narration", "text": "Опис подій..." }],
-  "updatedMemory": "Оновлена пам'ять",
-  "updatedObjectives": "Оновлені цілі"
+  "messages": [{ "type": "narration", "text": "Опис початкової ситуації..." }],
+  "updatedMemory": "Оновлена пам'ять або null",
+  "updatedObjectives": "Оновлені цілі або null",
+  "newLocation": null,
+  "newTimeOfDay": null
 }`;
 
             try {
@@ -1320,13 +1393,19 @@ ${currentGame.characters.map(c => `- ${c.name} ${c.surname} (${c.gender}, ${c.ro
                 currentGame.isStarted = true;
                 currentGame.messages = [];
 
-                if (result.messages) {
+                if (result.messages && Array.isArray(result.messages)) {
                     result.messages.forEach(msg => {
                         if (msg.type === 'narration') currentGame.messages.push({ type: 'narration', text: msg.text });
+                        else if (msg.type === 'character') {
+                            const char = currentGame.characters.find(c => c.id === msg.charId) || currentGame.characters[0];
+                            currentGame.messages.push({ type: 'character', charId: char.id, text: msg.text });
+                        }
                     });
                 }
                 if (result.updatedMemory) currentGame.memory = result.updatedMemory;
                 if (result.updatedObjectives) currentGame.objectives = result.updatedObjectives;
+                if (result.newLocation && result.newLocation.trim()) currentGame.location = result.newLocation.trim();
+                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) currentGame.timeOfDay = result.newTimeOfDay;
 
                 await dbSaveGame(currentGame);
                 renderAll();
@@ -1346,23 +1425,47 @@ ${currentGame.characters.map(c => `- ${c.name} ${c.surname} (${c.gender}, ${c.ro
 
             currentOptions = []; // Reset options
             setStatus(true, "Gemini створює відповідь...");
-            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "" };
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", surname: "", id: "player" };
+            const otherCharacters = currentGame.characters.filter(c => c.id !== currentGame.playerCharId);
 
             const systemPrompt = `
-Ти — майстер рольового квесту. Проаналізуй дію гравця і дай відповідь.
-НАЗВА: ${currentGame.title} | Локація: ${currentGame.location} | Час доби: ${currentGame.timeOfDay}
-Цілі: ${currentGame.objectives} | Пам'ять: ${currentGame.memory}
-ГРАВЕЦЬ: ${playerChar.name} ${playerChar.surname} (${playerChar.gender})
-ІНШІ ПЕРСОНАЖІ:
-${currentGame.characters.filter(c => c.id !== currentGame.playerCharId).map(c => `- ID: "${c.id}", Ім'я: ${c.name} ${c.surname}`).join('\n')}
+Ти — провідний майстер інтерактивного рольового квесту. Проаналізуй дію гравця, зміни в оточенні та дай детальну художню відповідь.
 
-Формат JSON:
+ПОТОЧНИЙ СТАН СВІТУ:
+- Назва: ${currentGame.title}
+- Локація: ${currentGame.location}
+- Час доби: ${currentGame.timeOfDay} (СУВОРО ДОТРИМУЙСЯ! Якщо зазначено "Ніч", персонажі не можуть говорити про денне світло, якщо тільки час доби не змінюється на ранок).
+- Цілі квесту: ${currentGame.objectives || 'Немає'}
+- Пам'ять квесту: ${currentGame.memory || 'Немає'}
+
+ГРАВЕЦЬ:
+${formatCharacterDetails(playerChar, true)}
+
+ПРИСУТНІ ПЕРСОНАЖІ:
+${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n') : 'Немає'}
+
+КРИТИЧНО ВАЖЛИВІ ПРАВИЛА:
+1. ХАРАКТЕР ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Кожен персонаж ОБОВ'ЯЗКОВО поводиться, мислить та говорить відповідно до свого прописаного характеру (темперамент, гострота на язик, гордість, егоїзм, підозрілість, пристрасті). Заборонено робити гордих або підступних персонажів надмірно люб'язними чи покірними лише через просту дію або посмішку гравця!
+2. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
+3. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
+4. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+
+ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
+${formatRecentHistory(8)}
+
+ОСТАННЯ ДІЯ АБО СЛОВА ГРАВЦЯ (${playerChar.name}):
+"${text}"
+
+ПОВЕРНИ ВІДПОВІДЬ ВИКЛЮЧНО У ФОРМАТІ JSON:
 {
   "messages": [
-    { "type": "narration", "text": "Опис дій" },
-    { "type": "character", "charId": "ID", "charName": "Ім'я", "text": "Пряма мова" }
+    { "type": "narration", "text": "Художній опис подій, наслідків дій та оточення..." },
+    { "type": "character", "charId": "ID персонажа з переліку вище", "charName": "Ім'я", "text": "Пряма мова персонажа, суворо витримана в його унікальному характері..." }
   ],
-  "newMemoryEntry": "Новий факт або null"
+  "newLocation": "Нова назва локації, якщо відбулося переміщення (наприклад: 'Тропа через Темний Ліс') або null",
+  "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
+  "newMemoryEntry": "Короткий новий факт для пам'яті (або null)",
+  "updatedObjectives": "Оновлені цілі або null"
 }`;
 
             try {
@@ -1370,7 +1473,7 @@ ${currentGame.characters.filter(c => c.id !== currentGame.playerCharId).map(c =>
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ role: "user", parts: [{ text: systemPrompt + "\n\nДІЯ ГРАВЦЯ: " + text }] }],
+                        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
@@ -1391,7 +1494,7 @@ ${currentGame.characters.filter(c => c.id !== currentGame.playerCharId).map(c =>
                             if (!targetChar) {
                                 const newId = 'char_' + Date.now();
                                 targetChar = {
-                                    id: newId, name: msg.charName || "Незнайомець", surname: "", gender: "Інша", age: 30, role: "Незнайомець", personality: "", appearance: "", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`
+                                    id: newId, name: msg.charName || "Незнайомець", surname: "", race: "Людина", gender: "Інша", age: 30, role: "Незнайомець", personality: "", appearance: "", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`
                                 };
                                 currentGame.characters.push(targetChar);
                             }
@@ -1400,8 +1503,20 @@ ${currentGame.characters.filter(c => c.id !== currentGame.playerCharId).map(c =>
                     });
                 }
 
-                if (result.newMemoryEntry) {
-                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + result.newMemoryEntry;
+                if (result.newLocation && typeof result.newLocation === 'string' && result.newLocation.trim() && result.newLocation.trim() !== currentGame.location) {
+                    currentGame.location = result.newLocation.trim();
+                }
+
+                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    currentGame.timeOfDay = result.newTimeOfDay;
+                }
+
+                if (result.updatedObjectives && typeof result.updatedObjectives === 'string' && result.updatedObjectives.trim()) {
+                    currentGame.objectives = result.updatedObjectives.trim();
+                }
+
+                if (result.newMemoryEntry && typeof result.newMemoryEntry === 'string' && result.newMemoryEntry.trim()) {
+                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + result.newMemoryEntry.trim();
                 }
 
                 await dbSaveGame(currentGame);
@@ -1450,7 +1565,12 @@ ${currentGame.characters.filter(c => c.id !== currentGame.playerCharId).map(c =>
 
             setStatus(true, "Генерація 5 варіантів дій...");
 
-            const promptText = `На основі останньої ситуації в грі запропонуй рівно 5 різних можливих варіантів дій чи реплік для мого персонажа. Поверни JSON: { "options": ["варіант 1", "варіант 2", "варіант 3", "варіант 4", "варіант 5"] }`;
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", personality: "" };
+            const promptText = `На основі поточної ситуації в грі (Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (${playerChar.personality || 'звичайний'}). 
+Останній контекст:
+${formatRecentHistory(5)}
+
+Поверни JSON: { "options": ["варіант 1", "варіант 2", "варіант 3", "варіант 4", "варіант 5"] }`;
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
