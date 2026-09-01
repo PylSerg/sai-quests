@@ -177,6 +177,15 @@
             border-color: var(--accent-color);
         }
 
+        .chat-messages-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
         .chat-messages {
             flex: 1;
             padding: 20px;
@@ -185,6 +194,40 @@
             flex-direction: column;
             gap: 15px;
             min-height: 0;
+        }
+
+        .btn-scroll-bottom {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(12px) scale(0.9);
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        .btn-scroll-bottom.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .btn-scroll-bottom:hover {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: var(--accent-color);
         }
 
         /* Generation Status & Spinner Bar */
@@ -726,7 +769,14 @@
             </div>
         </div>
 
-        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-messages-wrapper">
+            <div class="chat-messages" id="chatMessages"></div>
+            <button id="scrollToBottomBtn" class="btn-scroll-bottom" onclick="scrollToBottomSmooth()" title="Прокрутити донизу">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                </svg>
+            </button>
+        </div>
 
         <!-- GENERATION SPINNER (Relocated above input) -->
         <div id="statusContainer">
@@ -912,6 +962,14 @@
             }
         }
 
+        function isMobileDevice() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            return isMobileUA || isCoarse || (hasTouch && window.matchMedia('(max-width: 900px)').matches);
+        }
+
         /* Auto Textarea Height & Enter key submit */
         const userInput = document.getElementById('userInput');
         userInput.addEventListener('input', () => {
@@ -919,11 +977,44 @@
             userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
         });
         userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+            if (e.key === 'Enter') {
+                if (isMobileDevice()) {
+                    // На мобільних пристроях Enter додає новий рядок; відправка — лише кнопкою "Надіслати"
+                    return;
+                }
+                if (!e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
             }
         });
+
+        /* Scroll to Bottom Floating Button Logic */
+        function updateScrollToBottomVisibility() {
+            const container = document.getElementById('chatMessages');
+            const btn = document.getElementById('scrollToBottomBtn');
+            if (!container || !btn) return;
+            const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            if (distanceFromBottom > 80) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        }
+
+        function scrollToBottomSmooth() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        const chatMessagesElem = document.getElementById('chatMessages');
+        if (chatMessagesElem) {
+            chatMessagesElem.addEventListener('scroll', updateScrollToBottomVisibility);
+        }
 
         /* ==========================================
            3. STORAGE & DATABASE (IndexedDB)
@@ -1013,7 +1104,7 @@
                     saveLastActiveGameId(id);
                     currentGame = { ...importedGame, id };
                     await refreshGameList();
-                    renderAll();
+                    renderAll('bottom');
                     await checkAndAutoRespond();
                     alert("Гру успішно імпортовано!");
                 } catch (err) {
@@ -1047,7 +1138,7 @@
                 document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
                 currentGame = null;
                 localStorage.removeItem('last_active_game_id');
-                renderMessages();
+                renderMessages('preserve');
                 return;
             }
 
@@ -1150,7 +1241,7 @@
             saveLastActiveGameId(id);
             currentGame = { ...newGame, id };
             await refreshGameList();
-            renderAll();
+            renderAll('bottom');
         }
 
         async function loadSelectedGame() {
@@ -1159,7 +1250,7 @@
             const games = await dbGetAllGames();
             currentGame = games.find(g => g.id === id);
             saveLastActiveGameId(id);
-            renderAll();
+            renderAll('bottom');
             await checkAndAutoRespond();
         }
 
@@ -1197,7 +1288,7 @@
             dbSaveGame(currentGame);
         }
 
-        function renderAll() {
+        function renderAll(scrollMode = 'preserve') {
             if (!currentGame) return;
             document.getElementById('gameStatePanel').style.display = 'flex';
             document.getElementById('currentGameTitle').innerText = currentGame.title;
@@ -1209,7 +1300,7 @@
             syncTimeOfDayButton();
             renderCharacterSelectors();
             renderCharactersList();
-            renderMessages();
+            renderMessages(scrollMode);
             updateInputAvailability();
         }
 
@@ -1423,10 +1514,15 @@
         }
 
         /* Message Rendering & Editing Last User Message in Input */
-        function renderMessages() {
+        function renderMessages(scrollMode = 'preserve') {
             const container = document.getElementById('chatMessages');
+            if (!container) return;
+            const prevScrollTop = container.scrollTop;
             container.innerHTML = '';
-            if (!currentGame) return;
+            if (!currentGame) {
+                updateScrollToBottomVisibility();
+                return;
+            }
 
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Ти", surname: "", avatar: "" };
             const playerAvatar = playerChar.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=player`;
@@ -1522,7 +1618,15 @@
                 container.appendChild(startBtnDiv);
             }
 
-            container.scrollTop = container.scrollHeight;
+            if (scrollMode === 'bottom') {
+                container.scrollTop = container.scrollHeight;
+            } else if (scrollMode === 'top') {
+                container.scrollTop = 0;
+            } else {
+                container.scrollTop = prevScrollTop;
+            }
+
+            updateScrollToBottomVisibility();
         }
 
         /* Edit last user message directly inside the input box */
@@ -1533,7 +1637,7 @@
             // Remove this message and subsequent messages
             currentGame.messages = currentGame.messages.slice(0, index);
             await dbSaveGame(currentGame);
-            renderMessages();
+            renderMessages('bottom');
 
             // Put into input field and focus
             const inputArea = document.getElementById('userInput');
@@ -1667,7 +1771,7 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                 if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) currentGame.timeOfDay = result.newTimeOfDay;
 
                 await dbSaveGame(currentGame);
-                renderAll();
+                renderAll('top');
             } catch (err) {
                 alert(`Помилка: ${err.message}`);
             } finally {
@@ -1866,7 +1970,7 @@ ${formatRecentHistory(8)}
                 }
 
                 await dbSaveGame(currentGame);
-                renderAll();
+                renderAll('preserve');
             } catch (err) {
                 alert(`Помилка: ${err.message}`);
             } finally {
@@ -1883,7 +1987,7 @@ ${formatRecentHistory(8)}
             currentGame.messages.push({ type: 'user', text: text });
             inputArea.value = '';
             inputArea.style.height = 'auto';
-            renderMessages();
+            renderMessages('bottom');
             await dbSaveGame(currentGame);
 
             await callGemini(text);
