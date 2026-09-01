@@ -495,6 +495,65 @@
             color: var(--text-color);
         }
 
+        /* Relationship Badges (0-100%) */
+        .rel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            line-height: 1.2;
+            vertical-align: middle;
+            user-select: none;
+        }
+
+        .rel-badge.rel-love {
+            color: #ff6b9d;
+            border-color: rgba(255, 107, 157, 0.35);
+            background: rgba(255, 107, 157, 0.12);
+        }
+
+        .rel-badge.rel-friend {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.35);
+            background: rgba(74, 222, 128, 0.12);
+        }
+
+        .rel-badge.rel-friendly {
+            color: #2dd4bf;
+            border-color: rgba(45, 212, 191, 0.35);
+            background: rgba(45, 212, 191, 0.12);
+        }
+
+        .rel-badge.rel-neutral {
+            color: #94a3b8;
+            border-color: rgba(148, 163, 184, 0.35);
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .rel-badge.rel-suspicious {
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.35);
+            background: rgba(251, 191, 36, 0.12);
+        }
+
+        .rel-badge.rel-hostile {
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.35);
+            background: rgba(248, 113, 113, 0.12);
+        }
+
+        .rel-badge.rel-hate {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.2);
+            font-weight: bold;
+        }
+
         .char-text {
             white-space: pre-wrap;
         }
@@ -715,7 +774,81 @@
         let currentOptions = [];
 
         /* ==========================================
-           1. THEME & UI HELPERS
+           1. RELATIONSHIPS ENGINE (0-100%)
+           ========================================== */
+        function getRelation(char, targetId) {
+            if (!char) return 50;
+            if (!char.relations || typeof char.relations !== 'object') char.relations = {};
+            if (char.relations[targetId] === undefined) char.relations[targetId] = 50;
+            return char.relations[targetId];
+        }
+
+        function setRelation(char, targetId, val) {
+            if (!char) return;
+            if (!char.relations || typeof char.relations !== 'object') char.relations = {};
+            const num = Math.max(0, Math.min(100, parseInt(val) || 0));
+            char.relations[targetId] = num;
+        }
+
+        function getRelClass(rel) {
+            if (rel >= 85) return 'rel-love';
+            if (rel >= 70) return 'rel-friend';
+            if (rel >= 55) return 'rel-friendly';
+            if (rel >= 45) return 'rel-neutral';
+            if (rel >= 30) return 'rel-suspicious';
+            if (rel >= 15) return 'rel-hostile';
+            return 'rel-hate';
+        }
+
+        function getRelIcon(rel) {
+            if (rel >= 85) return '💖';
+            if (rel >= 70) return '💚';
+            if (rel >= 55) return '😊';
+            if (rel >= 45) return '😐';
+            if (rel >= 30) return '🤨';
+            if (rel >= 15) return '😠';
+            return '💀';
+        }
+
+        function getRelDescription(rel) {
+            if (rel >= 85) return 'Закоханість / Абсолютна відданість';
+            if (rel >= 70) return 'Щира дружба / Довіра';
+            if (rel >= 55) return 'Симпатія / Прихильність';
+            if (rel >= 45) return 'Нейтральне / Ділове';
+            if (rel >= 30) return 'Стриманість / Підозра';
+            if (rel >= 15) return 'Неприязнь / Ворожість';
+            return 'Ненависть / Смертельний ворог';
+        }
+
+        function updateCharRelation(charId, targetId, val) {
+            const c = currentGame.characters.find(char => char.id === charId);
+            if (c) {
+                setRelation(c, targetId, val);
+                dbSaveGame(currentGame);
+                renderMessages();
+            }
+        }
+
+        function updateRelBadgeUI(charId, val) {
+            const num = parseInt(val) || 0;
+            const badge = document.getElementById(`rel_badge_${charId}`);
+            if (badge) {
+                badge.className = `rel-badge ${getRelClass(num)}`;
+                badge.innerText = `${getRelIcon(num)} ${num}%`;
+            }
+        }
+
+        function updateOtherRelBadgeUI(charId, targetId, val) {
+            const num = parseInt(val) || 0;
+            const badge = document.getElementById(`rel_badge_${charId}_${targetId}`);
+            if (badge) {
+                badge.className = `rel-badge ${getRelClass(num)}`;
+                badge.innerText = `${getRelIcon(num)} ${num}%`;
+            }
+        }
+
+        /* ==========================================
+           2. THEME & UI HELPERS
            ========================================== */
         function initTheme() {
             const saved = localStorage.getItem('app_theme');
@@ -794,7 +927,7 @@
         });
 
         /* ==========================================
-           2. STORAGE & DATABASE (IndexedDB)
+           3. STORAGE & DATABASE (IndexedDB)
            ========================================== */
         const DB_NAME = 'GeminiQuestDB';
         const DB_VERSION = 1;
@@ -856,7 +989,7 @@
         }
 
         /* ==========================================
-           3. IMPORT / EXPORT JSON
+           4. IMPORT / EXPORT JSON
            ========================================== */
         function exportCurrentGame() {
             if (!currentGame) return alert("Немає активної гри для експорту!");
@@ -892,7 +1025,7 @@
         }
 
         /* ==========================================
-           4. GAME STATE ENGINE
+           5. GAME STATE ENGINE
            ========================================== */
         async function refreshGameList() {
             const games = await dbGetAllGames();
@@ -987,10 +1120,10 @@
                 isStarted: false,
                 characters: [
                     {
-                        id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.maleCharacter.seed}`
+                        id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.maleCharacter.seed}`, relations: {}
                     },
                     {
-                        id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.femaleCharacter.seed}`
+                        id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.femaleCharacter.seed}`, relations: { [pId]: 45 }
                     }
                 ],
                 messages: [
@@ -1090,15 +1223,45 @@
             const container = document.getElementById('charactersList');
             container.innerHTML = '';
 
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { id: 'player', name: 'Гравець' };
+
             currentGame.characters.forEach(c => {
+                const isPlayer = c.id === currentGame.playerCharId;
+                const relVal = getRelation(c, currentGame.playerCharId);
                 const details = document.createElement('details');
                 details.className = 'char-details';
                 const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
 
+                const summaryRel = !isPlayer
+                    ? `<span class="rel-badge ${getRelClass(relVal)}" style="margin-left:auto; margin-right:6px;">${getRelIcon(relVal)} ${relVal}%</span>`
+                    : `<span style="font-size:11px; opacity:0.7; margin-left:auto; margin-right:6px;">(Гравець)</span>`;
+
+                // Sub-section for relations to other NPCs
+                const otherNPCs = currentGame.characters.filter(other => other.id !== c.id && other.id !== currentGame.playerCharId);
+                const otherNPCsHTML = otherNPCs.length > 0 ? `
+                    <details style="margin-top:6px; padding:6px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg);">
+                        <summary style="font-size:12px; cursor:pointer; font-weight:bold;">👥 Відношення до інших NPC</summary>
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                            ${otherNPCs.map(other => {
+                                const oRel = getRelation(c, other.id);
+                                return `
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                                        <span>До ${other.name} ${other.surname}:</span>
+                                        <span class="rel-badge ${getRelClass(oRel)}" id="rel_badge_${c.id}_${other.id}">${getRelIcon(oRel)} ${oRel}%</span>
+                                    </div>
+                                    <input type="range" min="0" max="100" value="${oRel}" oninput="updateCharRelation('${c.id}', '${other.id}', this.value); updateOtherRelBadgeUI('${c.id}', '${other.id}', this.value);">
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </details>
+                ` : '';
+
                 details.innerHTML = `
                     <summary>
                         <img src="${avatarSrc}" class="char-avatar" style="width:28px; height:28px;">
-                        <span style="flex:1;">${c.name || ''} ${c.surname || ''} ${c.race ? `(${c.race})` : ''}</span>
+                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name || ''} ${c.surname || ''}</span>
+                        ${summaryRel}
                         <button class="danger" style="padding:1px 6px; font-size:12px;" onclick="deleteCharacter(event, '${c.id}')">✕</button>
                     </summary>
                     <div class="char-details-body">
@@ -1130,6 +1293,18 @@
                             <label>Роль / Фах</label>
                             <input type="text" value="${c.role || ''}" onchange="updateCharData('${c.id}', 'role', this.value)">
                         </div>
+
+                        ${!isPlayer ? `
+                        <div class="form-group" style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="margin:0;">Відношення до вас (${playerChar.name})</label>
+                                <span class="rel-badge ${getRelClass(relVal)}" id="rel_badge_${c.id}">${getRelIcon(relVal)} ${relVal}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${relVal}" style="margin-top:6px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${currentGame.playerCharId}', this.value); updateRelBadgeUI('${c.id}', this.value);">
+                        </div>
+                        ${otherNPCsHTML}
+                        ` : ''}
+
                         <div class="form-group">
                             <label>Характер (Ключовий для ШІ)</label>
                             <textarea rows="3" placeholder="Опишіть манеру, темперамент, звички, недоліки..." onchange="updateCharData('${c.id}', 'personality', this.value)">${c.personality || ''}</textarea>
@@ -1163,7 +1338,7 @@
         function addNewCharacter() {
             const id = 'char_' + Date.now();
             currentGame.characters.push({
-                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`
+                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`, relations: {}
             });
             dbSaveGame(currentGame);
             renderAll();
@@ -1190,6 +1365,17 @@
 
         /* Helper to format full character profile for Gemini */
         function formatCharacterDetails(c, isPlayer = false) {
+            let relText = "";
+            if (!isPlayer && currentGame) {
+                const playerChar = currentGame.characters.find(char => char.id === currentGame.playerCharId) || { name: "Гравець", id: "player" };
+                const relToPlayer = getRelation(c, playerChar.id);
+                const otherNPCs = currentGame.characters.filter(other => other.id !== c.id && other.id !== playerChar.id);
+                const otherRels = otherNPCs.map(other => `    • До ${other.name} (ID: "${other.id}"): ${getRelation(c, other.id)}/100 (${getRelDescription(getRelation(c, other.id))})`).join('\n');
+                
+                relText = `\n  - ВІДНОШЕННЯ (0-100%):
+    • До гравця ${playerChar.name} (ID: "${playerChar.id}"): ${relToPlayer}/100 [${getRelDescription(relToPlayer)}]${otherRels ? '\n' + otherRels : ''}`;
+            }
+
             return `• ${isPlayer ? '[ГРАВЕЦЬ] ' : ''}ID: "${c.id}"
   - Ім'я: ${c.name || ''} ${c.surname || ''}
   - Раса: ${c.race || 'Людина'}
@@ -1197,7 +1383,7 @@
   - Вік: ${c.age || 'Невідомий'}
   - Роль / фах: ${c.role || 'Невідомо'}
   - ХАРАКТЕР (НАЙВИЩИЙ ПРІОРИТЕТ): ${c.personality || 'Звичайний'}
-  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}`;
+  - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}${relText}`;
         }
 
         /* Helper to format recent conversation history */
@@ -1257,13 +1443,19 @@
                     div.innerHTML = `<div>${m.text}</div>`;
                 } else if (m.type === 'character') {
                     div.className = 'message character';
-                    const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "" };
-                    const avatarSrc = char.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.charId || 'default'}`;
+                    const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "", id: m.charId || 'default' };
+                    const avatarSrc = char.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${char.id}`;
+                    const isPlayer = char.id === currentGame.playerCharId;
+                    const relToPlayer = getRelation(char, currentGame.playerCharId);
+                    const relBadge = !isPlayer
+                        ? `<span class="rel-badge ${getRelClass(relToPlayer)}" title="Відношення до вас: ${relToPlayer}% (${getRelDescription(relToPlayer)})">${getRelIcon(relToPlayer)} ${relToPlayer}%</span>`
+                        : '';
 
                     div.innerHTML = `
                         <div class="char-header">
                             <img src="${avatarSrc}" class="char-avatar" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback';">
                             <span class="char-name">${char.name || ''} ${char.surname || ''}</span>
+                            ${relBadge}
                         </div>
                         <div class="char-text">${m.text}</div>
                     `;
@@ -1336,7 +1528,7 @@
         }
 
         /* ==========================================
-           5. GEMINI API & GAME LOGIC
+           6. GEMINI API & GAME LOGIC
            ========================================== */
         async function handleStartGameButton() {
             const apiKey = document.getElementById('apiKey').value;
@@ -1363,15 +1555,17 @@ ${formatCharacterDetails(playerChar, true)}
 ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 
 ПРАВИЛА:
-1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, егоїзм, імпульсивність мають чітко проявлятися).
+1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, йогоїзм, імпульсивність мають чітко проявлятися).
 2. ЧАС ДОБИ: Дій згідно з поточним часом доби.
-3. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
+3. ВІДНОШЕННЯ (0-100%): Враховуй поточний рівень симпатії/довіри між персонажами.
+4. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
 
 Поверни JSON:
 {
   "messages": [{ "type": "narration", "text": "Опис початкової ситуації..." }],
   "updatedMemory": "Оновлена пам'ять або null",
   "updatedObjectives": "Оновлені цілі або null",
+  "updatedRelations": null,
   "newLocation": null,
   "newTimeOfDay": null
 }`;
@@ -1446,9 +1640,15 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
 
 КРИТИЧНО ВАЖЛИВІ ПРАВИЛА:
 1. ХАРАКТЕР ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Кожен персонаж ОБОВ'ЯЗКОВО поводиться, мислить та говорить відповідно до свого прописаного характеру (темперамент, гострота на язик, гордість, егоїзм, підозрілість, пристрасті). Заборонено робити гордих або підступних персонажів надмірно люб'язними чи покірними лише через просту дію або посмішку гравця!
-2. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
-3. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
-4. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+2. ВІДНОШЕННЯ (0-100%): Відношення персонажів до гравця та один до одного змінюється динамічно відповідно до їхніх характерів, вчинків та слів:
+   - Горді/егоїстичні/підозрілі персонажі підвищують відношення ДУЖЕ повільно й вимогливо (лише за реальну допомогу, повагу чи вигоду), але можуть швидко знизити його через зневагу, фальш чи образу.
+   - Якщо внаслідок цієї сцени/діалогу відношення персонажа до гравця чи іншого персонажа змінилося, ОБОВ'ЯЗКОВО поверни об'єкт "updatedRelations".
+     Формат: { "ID_персонажа_джерела": { "ID_цілі": нове_число_від_0_до_100 } }
+     Наприклад: { "${otherCharacters[0] ? otherCharacters[0].id : 'char_id'}": { "${playerChar.id}": 42 } }
+     Якщо відношення не змінилися, поверни null.
+3. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
+4. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
+5. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
 
 ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
 ${formatRecentHistory(8)}
@@ -1462,6 +1662,7 @@ ${formatRecentHistory(8)}
     { "type": "narration", "text": "Художній опис подій, наслідків дій та оточення..." },
     { "type": "character", "charId": "ID персонажа з переліку вище", "charName": "Ім'я", "text": "Пряма мова персонажа, суворо витримана в його унікальному характері..." }
   ],
+  "updatedRelations": { "ID_персонажа": { "ID_цілі": 55 } } або null,
   "newLocation": "Нова назва локації, якщо відбулося переміщення (наприклад: 'Тропа через Темний Ліс') або null",
   "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
   "newMemoryEntry": "Короткий новий факт для пам'яті (або null)",
@@ -1494,13 +1695,31 @@ ${formatRecentHistory(8)}
                             if (!targetChar) {
                                 const newId = 'char_' + Date.now();
                                 targetChar = {
-                                    id: newId, name: msg.charName || "Незнайомець", surname: "", race: "Людина", gender: "Інша", age: 30, role: "Незнайомець", personality: "", appearance: "", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`
+                                    id: newId, name: msg.charName || "Незнайомець", surname: "", race: "Людина", gender: "Інша", age: 30, role: "Незнайомець", personality: "", appearance: "", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`, relations: {}
                                 };
                                 currentGame.characters.push(targetChar);
                             }
                             currentGame.messages.push({ type: 'character', charId: targetChar.id, text: msg.text });
                         }
                     });
+                }
+
+                // Dynamic updates to relationships (0-100%)
+                if (result.updatedRelations && typeof result.updatedRelations === 'object') {
+                    for (const [sourceId, targetMap] of Object.entries(result.updatedRelations)) {
+                        const char = currentGame.characters.find(c => c.id === sourceId || (c.name && sourceId.includes(c.name)));
+                        if (char) {
+                            if (typeof targetMap === 'number') {
+                                setRelation(char, currentGame.playerCharId, targetMap);
+                            } else if (typeof targetMap === 'object' && targetMap !== null) {
+                                for (const [targetId, val] of Object.entries(targetMap)) {
+                                    let realTarget = currentGame.characters.find(c => c.id === targetId || (c.name && targetId.includes(c.name)));
+                                    const targetKey = realTarget ? realTarget.id : (targetId === 'player' || targetId === 'Гравець' ? currentGame.playerCharId : targetId);
+                                    setRelation(char, targetKey, val);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (result.newLocation && typeof result.newLocation === 'string' && result.newLocation.trim() && result.newLocation.trim() !== currentGame.location) {
