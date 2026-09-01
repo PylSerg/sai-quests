@@ -1011,6 +1011,7 @@
                     const importedGame = JSON.parse(e.target.result);
                     delete importedGame.id; // Assign new ID
                     const id = await dbSaveGame(importedGame);
+                    saveLastActiveGameId(id);
                     currentGame = { ...importedGame, id };
                     await refreshGameList();
                     renderAll();
@@ -1027,6 +1028,15 @@
         /* ==========================================
            5. GAME STATE ENGINE
            ========================================== */
+        function saveLastActiveGameId(id) {
+            if (id) localStorage.setItem('last_active_game_id', id);
+        }
+
+        function getLastActiveGameId() {
+            const saved = localStorage.getItem('last_active_game_id');
+            return saved ? parseInt(saved) : null;
+        }
+
         async function refreshGameList() {
             const games = await dbGetAllGames();
             const select = document.getElementById('gameSelect');
@@ -1037,6 +1047,7 @@
                 document.getElementById('gameStatePanel').style.display = 'none';
                 document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
                 currentGame = null;
+                localStorage.removeItem('last_active_game_id');
                 renderMessages();
                 return;
             }
@@ -1049,10 +1060,15 @@
             });
 
             if (!currentGame && games.length > 0) {
-                select.value = games[0].id;
+                const lastId = getLastActiveGameId();
+                const targetGame = (lastId && games.some(g => g.id === lastId))
+                    ? lastId
+                    : games[games.length - 1].id;
+                select.value = targetGame;
                 await loadSelectedGame();
             } else if (currentGame) {
                 select.value = currentGame.id;
+                saveLastActiveGameId(currentGame.id);
             }
         }
 
@@ -1132,6 +1148,7 @@
             };
 
             const id = await dbSaveGame(newGame);
+            saveLastActiveGameId(id);
             currentGame = { ...newGame, id };
             await refreshGameList();
             renderAll();
@@ -1142,6 +1159,7 @@
             if (!id) return;
             const games = await dbGetAllGames();
             currentGame = games.find(g => g.id === id);
+            saveLastActiveGameId(id);
             renderAll();
             await checkAndAutoRespond();
         }
@@ -1160,7 +1178,11 @@
         async function deleteCurrentGame() {
             if (!currentGame) return;
             if (confirm(`Видалити гру "${currentGame.title}"?`)) {
-                await dbDeleteGame(currentGame.id);
+                const deletedId = currentGame.id;
+                await dbDeleteGame(deletedId);
+                if (getLastActiveGameId() === deletedId) {
+                    localStorage.removeItem('last_active_game_id');
+                }
                 currentGame = null;
                 await refreshGameList();
             }
