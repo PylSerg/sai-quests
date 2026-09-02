@@ -822,6 +822,8 @@
         let currentGame = null;
         let isGenerating = false;
         let currentOptions = [];
+        // IDs of characters added during gameplay (before next player message)
+        let pendingNewCharIds = [];
 
         /* ==========================================
            1. RELATIONSHIPS ENGINE (0-100%)
@@ -1343,14 +1345,18 @@
                 const details = document.createElement('details');
                 details.className = 'char-details';
                 const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
+                // Is this a newly added character (pending slider display)?
+                const isPendingNew = pendingNewCharIds.includes(c.id);
 
                 const summaryRel = !isPlayer
                     ? `<span class="rel-badge ${getRelClass(relVal)}" id="summary_rel_badge_${c.id}" style="margin-left:auto; margin-right:6px;">${getRelIcon(relVal)} ${relVal}%</span>`
                     : `<span style="font-size:11px; opacity:0.7; margin-left:auto; margin-right:6px;">(Гравець)</span>`;
 
                 // Relationships to ALL other characters in the game
+                // Hide relations block for the player character when game is started
+                const shouldShowRelations = !(isPlayer && currentGame.isStarted);
                 const allOtherCharacters = currentGame.characters.filter(other => other.id !== c.id);
-                const relationshipsHTML = allOtherCharacters.length > 0 ? `
+                const relationshipsHTML = (shouldShowRelations && allOtherCharacters.length > 0) ? `
                     <div class="form-group" style="padding:10px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); margin-top:6px;">
                         <div style="font-weight:bold; font-size:12px; margin-bottom:8px; color:var(--accent-color); display:flex; align-items:center; gap:6px;">
                             <span>❤️ Відношення до персонажів</span>
@@ -1360,13 +1366,15 @@
                                 const targetRel = getRelation(c, target.id);
                                 const isTargetPlayer = target.id === currentGame.playerCharId;
                                 const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim();
+                                // Show slider: before game start OR (game started AND this char is pending AND this target is the new char or current char is new)
+                                const showSlider = !currentGame.isStarted || (isPendingNew && !isPlayer) || (!isPlayer && pendingNewCharIds.includes(target.id));
                                 return `
                                 <div style="display:flex; flex-direction:column; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05);">
                                     <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
                                         <span>До <strong>${targetLabel}</strong>:</span>
                                         <span class="rel-badge ${getRelClass(targetRel)}" id="rel_badge_${c.id}_${target.id}" title="${getRelDescription(targetRel)}">${getRelIcon(targetRel)} ${targetRel}%</span>
                                     </div>
-                                    ${!currentGame.isStarted ? `<input type="range" min="0" max="100" value="${targetRel}" style="margin-top:2px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${target.id}', this.value); updateTargetRelBadgeUI('${c.id}', '${target.id}', this.value);">` : ''}
+                                    ${showSlider ? `<input type="range" min="0" max="100" value="${targetRel}" style="margin-top:2px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${target.id}', this.value); updateTargetRelBadgeUI('${c.id}', '${target.id}', this.value);">` : ''}
                                 </div>`;
                             }).join('')}
                         </div>
@@ -1447,6 +1455,10 @@
             currentGame.characters.push({
                 id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`, relations: {}
             });
+            // Track as pending so sliders appear during gameplay
+            if (currentGame.isStarted) {
+                pendingNewCharIds.push(id);
+            }
             dbSaveGame(currentGame);
             renderAll();
         }
@@ -1465,7 +1477,12 @@
 
         function deleteCharacter(e, id) {
             e.stopPropagation();
+            e.preventDefault();
+            const char = currentGame.characters.find(c => c.id === id);
+            const charName = char ? `${char.name || ''} ${char.surname || ''}`.trim() : 'цього персонажа';
+            if (!confirm(`Видалити персонажа "${charName}"?`)) return;
             currentGame.characters = currentGame.characters.filter(c => c.id !== id);
+            pendingNewCharIds = pendingNewCharIds.filter(pid => pid !== id);
             dbSaveGame(currentGame);
             renderAll();
         }
@@ -1809,11 +1826,12 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
 
 КРИТИЧНО ВАЖЛИВІ ПРАВИЛА:
 1. ХАРАКТЕР ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Кожен персонаж ОБОВ'ЯЗКОВО поводиться, мислить та говорить відповідно до свого прописаного характеру (темперамент, гострота на язик, гордість, егоїзм, підозрілість, пристрасті). Заборонено робити гордих або підступних персонажів надмірно люб'язними чи покірними лише через просту дію або посмішку гравця!
-2. ВІДНОШЕННЯ (0-100%): Відношення персонажів до гравця та один до одного змінюється динамічно відповідно до їхніх характерів, вчинків та слів:
+2. ВІДНОШЕННЯ (0-100%): Відношення персонажів до гравця та ОДИН ДО ОДНОГО змінюється динамічно відповідно до їхніх характерів, вчинків та слів:
    - Горді/егоїстичні/підозрілі персонажі підвищують відношення ДУЖЕ повільно й вимогливо (лише за реальну допомогу, повагу чи вигоду), але можуть швидко знизити його через зневагу, фальш чи образу.
-   - Якщо внаслідок цієї сцени/діалогу відношення персонажа до гравця чи іншого персонажа змінилося, ОБОВ'ЯЗКОВО поверни об'єкт "updatedRelations".
+   - ВІДНОШЕННЯ МІЖ NPC: якщо дія гравця чи події впливають на відносини між двома NPC (наприклад, один рятує іншого, або між ними виникає конфлікт), ти ОБОВ'ЯЗКОВО також оновлюєш їхні відношення між собою.
+   - Якщо внаслідок цієї сцени/діалогу відношення будь-яких персонажів до гравця чи один до одного змінилося, ОБОВ'ЯЗКОВО поверни об'єкт "updatedRelations".
      Формат: { "ID_персонажа_джерела": { "ID_цілі": нове_число_від_0_до_100 } }
-     Наприклад: { "${otherCharacters[0] ? otherCharacters[0].id : 'char_id'}": { "${playerChar.id}": 42 } }
+     Приклад (відношення до гравця + між NPC): { "${otherCharacters[0] ? otherCharacters[0].id : 'char_id'}": { "${playerChar.id}": 42${otherCharacters[1] ? `, "${otherCharacters[1].id}": 35` : ''} } }
      Якщо відношення не змінилися, поверни null.
 3. ПОЯВА НОВИХ ПЕРСОНАЖІВ (НОВІ ВОРОГИ / СОЮЗНИКИ / НЕЗНАЙОМЦІ):
    Якщо в сцені з'являється новий персонаж, обов'язково додай його опис у масив "newCharacters".
@@ -1899,6 +1917,8 @@ ${formatRecentHistory(8)}
                             relations: { [currentGame.playerCharId]: initRel }
                         };
                         currentGame.characters.push(newCharObj);
+                        // Track as pending so sliders appear until next player message
+                        pendingNewCharIds.push(newId);
                     });
                 }
 
@@ -1929,6 +1949,8 @@ ${formatRecentHistory(8)}
                                     relations: { [currentGame.playerCharId]: isEnemy ? 15 : 50 }
                                 };
                                 currentGame.characters.push(targetChar);
+                                // Track as pending so sliders appear until next player message
+                                pendingNewCharIds.push(newId);
                             }
                             currentGame.messages.push({ type: 'character', charId: targetChar.id, text: msg.text });
                         }
@@ -1984,6 +2006,8 @@ ${formatRecentHistory(8)}
             if (!text || !currentGame || !currentGame.isStarted || isGenerating) return;
 
             currentOptions = [];
+            // Clear pending new chars — player is sending a message
+            pendingNewCharIds = [];
             currentGame.messages.push({ type: 'user', text: text });
             inputArea.value = '';
             inputArea.style.height = 'auto';
