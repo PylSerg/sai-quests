@@ -714,7 +714,9 @@
                 <div class="card-header">📅 Поточний день та час</div>
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>Поточний день</label>
-                    <div id="stateDayDisplay" style="font-size: 15px; font-weight: 700; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; text-align: center; color: var(--text-color);">День 1</div>
+                    <div id="stateDayDisplay"
+                        style="font-size: 15px; font-weight: 700; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; text-align: center; color: var(--text-color);">
+                        День 1</div>
                 </div>
                 <div class="form-group">
                     <label>Час доби</label>
@@ -745,7 +747,8 @@
             <!-- Memory Log -->
             <div class="card">
                 <div class="card-header">🧠 Пам'ять квесту</div>
-                <textarea id="stateMemory" rows="4" placeholder="• День 1, Ранок, Запорошена таверна: Основні моменти..."
+                <textarea id="stateMemory" rows="4"
+                    placeholder="• День 1, Ранок, Запорошена таверна: Основні моменти..."
                     onchange="updateGameState()"></textarea>
             </div>
 
@@ -783,9 +786,14 @@
                 <h2 id="currentGameTitle">Оберіть або створіть гру</h2>
             </div>
             <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
-                <span id="headerDayBadge" title="Поточний день" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">День 1</span>
-                <span id="headerTimeBadge" title="Поточний час доби" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">☀️ День</span>
-                <button class="btn-round" id="reloadPageBtn" onclick="location.reload()" title="Перезавантажити сторінку">🔄</button>
+                <span id="headerDayBadge" title="Поточний день"
+                    style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">День
+                    1</span>
+                <span id="headerTimeBadge" title="Поточний час доби"
+                    style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">☀️
+                    День</span>
+                <button class="btn-round" id="reloadPageBtn" onclick="location.reload()"
+                    title="Перезавантажити сторінку">🔄</button>
             </div>
         </div>
 
@@ -1606,18 +1614,6 @@
             renderLocationsList();
         }
 
-        function setCurrentLocation(id) {
-            if (!currentGame || !Array.isArray(currentGame.locations)) return;
-            const loc = currentGame.locations.find(l => l.id === id);
-            if (loc) {
-                currentGame.location = loc.name || loc.description.split('\n')[0].slice(0, 40) || 'Локація';
-                const locInput = document.getElementById('stateLocation');
-                if (locInput) locInput.value = currentGame.location;
-                dbSaveGame(currentGame);
-                renderLocationsList();
-            }
-        }
-
         function renderLocationsList() {
             const container = document.getElementById('locationsList');
             if (!container) return;
@@ -1653,16 +1649,16 @@
                 details.innerHTML = `
                     <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 15px;">📍</span>
-                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
+                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
                             ${titleText}
                         </span>
-                        ${isCurrent ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--accent-color); color: white; white-space: nowrap;">Поточна</span>` : `<button type="button" style="padding: 2px 7px; font-size: 11px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-color); cursor: pointer;" onclick="event.stopPropagation(); event.preventDefault(); setCurrentLocation('${loc.id}')" title="Встановити як поточну">Зробити поточною</button>`}
+                        ${isCurrent ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--accent-color); color: white; white-space: nowrap;">Поточна</span>` : ''}
                         <button class="danger" style="padding: 1px 6px; font-size: 12px; margin-left: 4px;" onclick="deleteLocation(event, '${loc.id}')" title="Видалити локацію">✕</button>
                     </summary>
                     <div class="char-details-body" style="padding-top: 8px;">
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Опис локації</label>
-                            <textarea rows="3" placeholder="Опис локації..." onchange="updateLocationDescription('${loc.id}', this.value)">${loc.description || ''}</textarea>
+                            <textarea rows="5" placeholder="Опис локації..." onchange="updateLocationDescription('${loc.id}', this.value)">${loc.description || ''}</textarea>
                         </div>
                     </div>
                 `;
@@ -2232,7 +2228,7 @@ ${formatRecentHistory(8)}
                         const locName = (typeof nl === 'string' ? nl : (nl.name || '')).trim();
                         const locDesc = (typeof nl === 'string' ? nl : (nl.description || nl.name || '')).trim();
                         if (!locDesc) return;
-                        const existing = currentGame.locations.find(l => 
+                        const existing = currentGame.locations.find(l =>
                             (locName && l.name && l.name.toLowerCase() === locName.toLowerCase()) ||
                             (locDesc && l.description && l.description.toLowerCase() === locDesc.toLowerCase())
                         );
