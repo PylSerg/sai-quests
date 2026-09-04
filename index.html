@@ -1035,7 +1035,7 @@
 
         function saveSelectedModel(model) { localStorage.setItem('gemini_selected_model', model); }
         function loadSelectedModel() {
-            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-3.7-flash';
+            const saved = localStorage.getItem('gemini_selected_model') || 'gemini-3.5-flash-lite';
             document.getElementById('modelSelect').value = saved;
         }
 
