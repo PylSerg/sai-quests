@@ -709,12 +709,12 @@
         </div>
 
         <div class="sidebar-content" id="gameStatePanel" style="display: none;">
-            <!-- World Settings -->
+            <!-- Current Day & Time of Day -->
             <div class="card">
-                <div class="card-header">🌍 Оточення та Світ</div>
-                <div class="form-group">
-                    <label>Локація</label>
-                    <textarea rows="2" id="stateLocation" onchange="updateGameState()"></textarea>
+                <div class="card-header">📅 Поточний день та час</div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>Поточний день</label>
+                    <div id="stateDayDisplay" style="font-size: 15px; font-weight: 700; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; text-align: center; color: var(--text-color);">День 1</div>
                 </div>
                 <div class="form-group">
                     <label>Час доби</label>
@@ -727,6 +727,15 @@
                 </div>
             </div>
 
+            <!-- World Settings -->
+            <div class="card">
+                <div class="card-header">🌍 Оточення та Світ</div>
+                <div class="form-group">
+                    <label>Локація</label>
+                    <textarea rows="2" id="stateLocation" onchange="updateGameState()"></textarea>
+                </div>
+            </div>
+
             <!-- Objectives -->
             <div class="card">
                 <div class="card-header">🎯 Цілі квесту</div>
@@ -736,7 +745,7 @@
             <!-- Memory Log -->
             <div class="card">
                 <div class="card-header">🧠 Пам'ять квесту</div>
-                <textarea id="stateMemory" rows="4" placeholder="Основні моменти..."
+                <textarea id="stateMemory" rows="4" placeholder="• День 1, Ранок: Основні моменти..."
                     onchange="updateGameState()"></textarea>
             </div>
 
@@ -764,9 +773,10 @@
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Меню">☰</button>
                 <h2 id="currentGameTitle">Оберіть або створіть гру</h2>
             </div>
-            <div class="header-actions">
-                <button class="btn-round" id="headerTimeBtn" onclick="cycleTimeOfDay()"
-                    title="Змінити час доби">☀️</button>
+            <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+                <span id="headerDayBadge" title="Поточний день" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">День 1</span>
+                <span id="headerTimeBadge" title="Поточний час доби" style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border-color); white-space: nowrap;">☀️ День</span>
+                <button class="btn-round" id="reloadPageBtn" onclick="location.reload()" title="Перезавантажити сторінку">🔄</button>
             </div>
         </div>
 
@@ -808,10 +818,11 @@
         const SCENARIOS_PRESETS = [
             {
                 title: "Таємниця закинутої таверни",
+                day: 1,
                 location: "Запорошена таверна «Чорний Круг»",
                 timeOfDay: "Ніч",
                 objectives: "Знайти зашифровану карту до старої шахти",
-                memory: "Ви сховалися у закинутій будівлі під час грози.",
+                memory: "• День 1, Ніч: Ви сховалися у закинутій будівлі під час грози.",
                 pName: "Сергій", pSurname: "Мандрівник", pRace: "Людина", pGender: "Чоловіча", pAge: 29, pRole: "Шукач пригод", pPersonality: "Сміливий, допитливий", pApp: "Темний плащ, шпага на поясі", pSeed: "Serhii",
                 cName: "Емілі", cSurname: "Золота Лисиця", cRace: "Людина", cGender: "Жіноча", cAge: 24, cRole: "Здібна злодійка", cPersonality: "Горда егоїстка, допитлива, кмітлива, імпульсивна та закохана у стародавні таємниці, гостра на язик", cApp: "Шкіряний обладунок, короткий клинок", cSeed: "Emily"
             }
@@ -940,19 +951,29 @@
             }
         }
 
-        function cycleTimeOfDay() {
-            if (!currentGame) return;
-            const currentIdx = TIME_STEPS.indexOf(currentGame.timeOfDay || "День");
-            const nextIdx = (currentIdx + 1) % TIME_STEPS.length;
-            currentGame.timeOfDay = TIME_STEPS[nextIdx];
-            document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay;
-            syncTimeOfDayButton();
-            dbSaveGame(currentGame);
+        function updateDayDisplay() {
+            const day = currentGame && typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
+            const stateDayDisplay = document.getElementById('stateDayDisplay');
+            if (stateDayDisplay) {
+                stateDayDisplay.innerText = `День ${day}`;
+            }
+            const headerDayBadge = document.getElementById('headerDayBadge');
+            if (headerDayBadge) {
+                headerDayBadge.innerText = `День ${day}`;
+            }
         }
 
         function syncTimeOfDayButton() {
-            const tod = currentGame ? currentGame.timeOfDay : "День";
-            document.getElementById('headerTimeBtn').innerText = TIME_ICONS[tod] || "☀️";
+            const tod = currentGame && currentGame.timeOfDay ? currentGame.timeOfDay : "День";
+            const icon = TIME_ICONS[tod] || "☀️";
+            const headerTimeBadge = document.getElementById('headerTimeBadge');
+            if (headerTimeBadge) {
+                headerTimeBadge.innerText = `${icon} ${tod}`;
+            }
+            const headerTimeBtn = document.getElementById('headerTimeBtn');
+            if (headerTimeBtn) {
+                headerTimeBtn.innerText = icon;
+            }
         }
 
         function setStatus(loading, text = "Gemini генерує відповідь...") {
@@ -1105,6 +1126,9 @@
                 try {
                     const importedGame = JSON.parse(e.target.result);
                     delete importedGame.id; // Assign new ID
+                    if (!importedGame.day || typeof importedGame.day !== 'number' || importedGame.day < 1) {
+                        importedGame.day = 1;
+                    }
                     const id = await dbSaveGame(importedGame);
                     saveLastActiveGameId(id);
                     currentGame = { ...importedGame, id };
@@ -1141,6 +1165,8 @@
                 select.innerHTML = '<option value="">Немає збережених ігор</option>';
                 document.getElementById('gameStatePanel').style.display = 'none';
                 document.getElementById('currentGameTitle').innerText = 'Створіть нову гру';
+                const headerDayBadge = document.getElementById('headerDayBadge');
+                if (headerDayBadge) headerDayBadge.innerText = 'День 1';
                 currentGame = null;
                 localStorage.removeItem('last_active_game_id');
                 renderMessages('preserve');
@@ -1223,10 +1249,11 @@
 
             const newGame = {
                 title: title,
+                day: 1,
                 location: gameData.location,
                 timeOfDay: gameData.timeOfDay,
                 objectives: gameData.objectives,
-                memory: gameData.memory,
+                memory: gameData.memory ? (gameData.memory.startsWith('•') ? gameData.memory : `• День 1, ${gameData.timeOfDay}: ${gameData.memory}`) : `• День 1, ${gameData.timeOfDay}: Початок пригод.`,
                 playerCharId: pId,
                 isStarted: false,
                 characters: [
@@ -1285,16 +1312,31 @@
 
         function updateGameState() {
             if (!currentGame) return;
+            const oldTimeOfDay = currentGame.timeOfDay;
             currentGame.location = document.getElementById('stateLocation').value;
             currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
             currentGame.objectives = document.getElementById('stateObjectives').value;
             currentGame.memory = document.getElementById('stateMemory').value;
             currentGame.playerCharId = document.getElementById('playerCharSelect').value;
+
+            // Day is not editable manually
+
+            if (currentGame.timeOfDay === "Ранок") {
+                if (oldTimeOfDay !== "Ранок") {
+                    currentGame.pendingDayTransition = true;
+                }
+            } else {
+                currentGame.pendingDayTransition = false;
+            }
+
+            syncTimeOfDayButton();
+            updateDayDisplay();
             dbSaveGame(currentGame);
         }
 
         function renderAll(scrollMode = 'preserve') {
             if (!currentGame) return;
+            currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
             document.getElementById('gameStatePanel').style.display = 'flex';
             document.getElementById('currentGameTitle').innerText = currentGame.title;
             document.getElementById('stateLocation').value = currentGame.location || '';
@@ -1302,6 +1344,7 @@
             document.getElementById('stateObjectives').value = currentGame.objectives || '';
             document.getElementById('stateMemory').value = currentGame.memory || '';
 
+            updateDayDisplay();
             syncTimeOfDayButton();
             renderCharacterSelectors();
             renderCharactersList();
@@ -1684,6 +1727,7 @@
             const systemPrompt = `
 Ти — майстер інтерактивного рольового квесту.
 НАЗВА КВЕСТУ: ${currentGame.title}
+ПОТОЧНИЙ ДЕНЬ: День ${currentGame.day || 1} (Обов'язково враховуй поточний день у відповіді!)
 ПОТОЧНА ЛОКАЦІЯ: ${currentGame.location}
 ПОТОЧНИЙ ЧАС ДОБИ: ${currentGame.timeOfDay} (Обов'язково відповідай цьому часу доби!)
 ЦІЛІ КВЕСТУ: ${currentGame.objectives}
@@ -1696,7 +1740,7 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 
 ПРАВИЛА:
 1. ХАРАКТЕРИ ПЕРСОНАЖІВ — НАЙВИЩИЙ ПРІОРИТЕТ. Поведінка, реакції та мова повинні суворо відповідати їхнім характерам (наприклад: гордість, сарказм, йогоїзм, імпульсивність мають чітко проявлятися).
-2. ЧАС ДОБИ: Дій згідно з поточним часом доби.
+2. ДЕНЬ ТА ЧАС ДОБИ: Обов'язково враховуй поточний день (День ${currentGame.day || 1}) та час доби (${currentGame.timeOfDay}) при створенні стартової атмосфери, початку подій та опису оточення.
 3. ВІДНОШЕННЯ (0-100%): Враховуй поточний рівень симпатії/довіри між персонажами.
    - При відношенні 85-94%: між персонажем та гравцем різної статі можуть виникати романтичні почуття — флірт, ніжність, натяки на взаємний потяг.
    - При відношенні 95-100%: можлива інтимна близькість між персонажем та гравцем (якщо вони різної статі та це органічно випливає з ситуації). Описуй художньо, але відверто та без цензури.
@@ -1747,6 +1791,7 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                 const result = JSON.parse(data.candidates[0].content.parts[0].text);
 
                 currentGame.isStarted = true;
+                currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
                 currentGame.messages = [];
 
                 // Add any new characters created at start
@@ -1790,7 +1835,12 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                 if (result.updatedMemory) currentGame.memory = result.updatedMemory;
                 if (result.updatedObjectives) currentGame.objectives = result.updatedObjectives;
                 if (result.newLocation && result.newLocation.trim()) currentGame.location = result.newLocation.trim();
-                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) currentGame.timeOfDay = result.newTimeOfDay;
+                if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    if (result.newTimeOfDay === "Ранок" && currentGame.timeOfDay !== "Ранок") {
+                        currentGame.day = (currentGame.day || 1) + 1;
+                    }
+                    currentGame.timeOfDay = result.newTimeOfDay;
+                }
 
                 await dbSaveGame(currentGame);
                 renderAll('top');
@@ -1818,6 +1868,7 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 
 ПОТОЧНИЙ СТАН СВІТУ:
 - Назва: ${currentGame.title}
+- Поточний день: День ${currentGame.day || 1} (СУВОРО ВРАХОВУЙ У ВІДПОВІДІ!)
 - Локація: ${currentGame.location}
 - Час доби: ${currentGame.timeOfDay} (СУВОРО ДОТРИМУЙСЯ! Якщо зазначено "Ніч", персонажі не можуть говорити про денне світло, якщо тільки час доби не змінюється на ранок).
 - Цілі квесту: ${currentGame.objectives || 'Немає'}
@@ -1854,9 +1905,12 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
    - Підозрілі вартові, холодні чужинці, конкуренти: 25-40% (настороженість / підозра).
    - Звичайні містяни, нейтральні торговці: 45-55% (нейтральне).
    - Врятовані, потенційні союзники, друзі: 60-80% (прихильність / вдячність).
-4. ЧАС ДОБИ: Якщо час доби змінюється через тривалі дії або очікування, поверни "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч"). Якщо час не змінився, поверни null.
+4. ПОТОЧНИЙ ДЕНЬ ТА ЧАС ДОБИ:
+   - ОБОВ'ЯЗКОВО ВРАХОВУЙ ПОТОЧНИЙ ДЕНЬ (День ${currentGame.day || 1}) та ЧАС ДОБИ (${currentGame.timeOfDay}) у відповіді: стан персонажів (втома, голод, сонливість чи бадьорість після сну), освітлення, час для відпочинку/нічлігу чи світанку, тривалість дій.
+   - Якщо персонажі лягають спати, ночують, довго чекають або здійснюють тривалий перехід, час доби та день змінюються. Якщо настає ранок наступного дня або минає доба чи більше, обов'язково відобрази це в оповіді, онови "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч") та поверни оновлений номер дня у "newDay" (наприклад: ${(currentGame.day || 1) + 1}).
+   - Якщо день не змінився, поверни "newDay": null. Якщо час доби не змінився, поверни "newTimeOfDay": null.
 5. ЛОКАЦІЯ ТА ПОДОРОЖ: Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
-6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Зверни увагу: якщо сам вказуєш часовий маркер — спочатку день, потім час доби, а вже потім примітка (наприклад: "День ${currentGame.day || 1}, ${currentGame.timeOfDay}: Знайшли зашифровану карту"), або просто саму примітку. Якщо оновилися цілі, вкажи їх у "updatedObjectives".
 
 ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
 ${formatRecentHistory(8)}
@@ -1886,8 +1940,9 @@ ${formatRecentHistory(8)}
   ] або null,
   "updatedRelations": { "ID_персонажа": { "ID_цілі": 55 } } або null,
   "newLocation": "Нова назва локації, якщо відбулося переміщення (наприклад: 'Тропа через Темний Ліс') або null",
+  "newDay": ${(currentGame.day || 1) + 1} (новий номер дня, якщо настав наступний день/минула доба, інакше null),
   "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
-  "newMemoryEntry": "Короткий новий факт для пам'яті (або null)",
+  "newMemoryEntry": "День ${currentGame.day || 1}, ${currentGame.timeOfDay}: Короткий новий факт для пам'яті (або null)",
   "updatedObjectives": "Оновлені цілі або null"
 }`;
 
@@ -1993,8 +2048,22 @@ ${formatRecentHistory(8)}
                     currentGame.location = result.newLocation.trim();
                 }
 
+                if (result.newDay !== undefined && result.newDay !== null) {
+                    const parsedDay = typeof result.newDay === 'number' ? result.newDay : parseInt(String(result.newDay).replace(/\D/g, ''), 10);
+                    if (!isNaN(parsedDay) && parsedDay >= 1) {
+                        currentGame.day = parsedDay;
+                        updateDayDisplay();
+                    }
+                } else if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                    if (result.newTimeOfDay === "Ранок" && currentGame.timeOfDay !== "Ранок") {
+                        currentGame.day = (currentGame.day || 1) + 1;
+                        updateDayDisplay();
+                    }
+                }
+
                 if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
                     currentGame.timeOfDay = result.newTimeOfDay;
+                    currentGame.pendingDayTransition = false;
                 }
 
                 if (result.updatedObjectives && typeof result.updatedObjectives === 'string' && result.updatedObjectives.trim()) {
@@ -2002,7 +2071,15 @@ ${formatRecentHistory(8)}
                 }
 
                 if (result.newMemoryEntry && typeof result.newMemoryEntry === 'string' && result.newMemoryEntry.trim()) {
-                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + result.newMemoryEntry.trim();
+                    let entry = result.newMemoryEntry.trim().replace(/^[•\-\*]\s*/, '');
+                    const dayRegex = /^\[?\s*день\s*\d+/i;
+                    let formattedEntry = "";
+                    if (dayRegex.test(entry)) {
+                        formattedEntry = entry;
+                    } else {
+                        formattedEntry = `День ${currentGame.day || 1}, ${currentGame.timeOfDay}: ${entry}`;
+                    }
+                    currentGame.memory = (currentGame.memory ? currentGame.memory + "\n• " : "• ") + formattedEntry;
                 }
 
                 await dbSaveGame(currentGame);
@@ -2019,6 +2096,12 @@ ${formatRecentHistory(8)}
             const text = inputArea.value.trim();
             if (!text || !currentGame || !currentGame.isStarted || isGenerating) return;
 
+            if (currentGame.pendingDayTransition && currentGame.timeOfDay === "Ранок") {
+                currentGame.day = (currentGame.day || 1) + 1;
+                currentGame.pendingDayTransition = false;
+                updateDayDisplay();
+            }
+
             currentOptions = [];
             // Clear pending new chars — player is sending a message
             pendingNewCharIds = [];
@@ -2034,6 +2117,12 @@ ${formatRecentHistory(8)}
         /* Action Buttons: Continue, Options */
         async function triggerContinue() {
             if (isGenerating) return;
+            if (currentGame && currentGame.pendingDayTransition && currentGame.timeOfDay === "Ранок") {
+                currentGame.day = (currentGame.day || 1) + 1;
+                currentGame.pendingDayTransition = false;
+                updateDayDisplay();
+                await dbSaveGame(currentGame);
+            }
             currentOptions = [];
             await callGemini("Продовжуй події далі...");
         }
@@ -2054,7 +2143,7 @@ ${formatRecentHistory(8)}
             setStatus(true, "Генерація 5 варіантів дій...");
 
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", personality: "" };
-            const promptText = `На основі поточної ситуації в грі (Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (${playerChar.personality || 'звичайний'}). 
+            const promptText = `На основі поточної ситуації в грі (Поточний день: День ${currentGame.day || 1}, Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (${playerChar.personality || 'звичайний'}). 
 Останній контекст:
 ${formatRecentHistory(5)}
 
