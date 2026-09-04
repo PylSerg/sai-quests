@@ -694,6 +694,7 @@
                     <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
                     <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                     <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+                    <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
                 </select>
             </div>
 
@@ -771,9 +772,10 @@
 
         <div class="chat-messages-wrapper">
             <div class="chat-messages" id="chatMessages"></div>
-            <button id="scrollToBottomBtn" class="btn-scroll-bottom" onclick="scrollToBottomSmooth()" title="Прокрутити донизу">
+            <button id="scrollToBottomBtn" class="btn-scroll-bottom" onclick="scrollToBottomSmooth()"
+                title="Прокрутити донизу">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                 </svg>
             </button>
         </div>
@@ -1364,12 +1366,12 @@
                         </div>
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             ${allOtherCharacters.map(target => {
-                                const targetRel = getRelation(c, target.id);
-                                const isTargetPlayer = target.id === currentGame.playerCharId;
-                                const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim();
-                                // Show slider: before game start OR (game started AND this char is pending AND this target is the new char or current char is new)
-                                const showSlider = !currentGame.isStarted || (isPendingNew && !isPlayer) || (!isPlayer && pendingNewCharIds.includes(target.id));
-                                return `
+                    const targetRel = getRelation(c, target.id);
+                    const isTargetPlayer = target.id === currentGame.playerCharId;
+                    const targetLabel = `${target.name || ''} ${target.surname || ''} ${isTargetPlayer ? '(Гравець)' : ''}`.trim();
+                    // Show slider: before game start OR (game started AND this char is pending AND this target is the new char or current char is new)
+                    const showSlider = !currentGame.isStarted || (isPendingNew && !isPlayer) || (!isPlayer && pendingNewCharIds.includes(target.id));
+                    return `
                                 <div style="display:flex; flex-direction:column; gap:4px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05);">
                                     <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
                                         <span>До <strong>${targetLabel}</strong>:</span>
@@ -1377,7 +1379,7 @@
                                     </div>
                                     ${showSlider ? `<input type="range" min="0" max="100" value="${targetRel}" style="margin-top:2px; cursor:pointer;" oninput="updateCharRelation('${c.id}', '${target.id}', this.value); updateTargetRelBadgeUI('${c.id}', '${target.id}', this.value);">` : ''}
                                 </div>`;
-                            }).join('')}
+                }).join('')}
                         </div>
                     </div>
                 ` : '';
@@ -1496,7 +1498,7 @@
                 const relToPlayer = getRelation(c, playerChar.id);
                 const otherNPCs = currentGame.characters.filter(other => other.id !== c.id && other.id !== playerChar.id);
                 const otherRels = otherNPCs.map(other => `    • До ${other.name} (ID: "${other.id}"): ${getRelation(c, other.id)}/100 (${getRelDescription(getRelation(c, other.id))})`).join('\n');
-                
+
                 relText = `\n  - ВІДНОШЕННЯ (0-100%):
     • До гравця ${playerChar.name} (ID: "${playerChar.id}"): ${relToPlayer}/100 [${getRelDescription(relToPlayer)}]${otherRels ? '\n' + otherRels : ''}`;
             }
