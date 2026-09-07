@@ -87,6 +87,7 @@
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
             transition: margin-left 0.3s ease, transform 0.3s ease;
             z-index: 100;
             flex-shrink: 0;
@@ -105,9 +106,24 @@
             flex-shrink: 0;
         }
 
+        .sidebar-header-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+            max-height: 500px;
+            opacity: 1;
+            transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+        }
+
+        .sidebar-header-body.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: -10px;
+            pointer-events: none;
+        }
+
         .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
             padding: 15px;
             display: flex;
             flex-direction: column;
@@ -528,6 +544,45 @@
             border: 2px solid var(--accent-color);
         }
 
+        .avatar-wrap {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .avatar-wrap .char-avatar {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .avatar-wrap.loading .char-avatar {
+            opacity: 0;
+        }
+
+        .avatar-wrap .avatar-spinner {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            opacity: 0;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .avatar-wrap.loading .avatar-spinner {
+            opacity: 1;
+            animation: avatarSpin 0.8s linear infinite;
+        }
+
+        @keyframes avatarSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .char-name {
             font-weight: bold;
             color: var(--accent-color);
@@ -678,33 +733,42 @@
         <div class="sidebar-header">
             <div class="row" style="justify-content: space-between;">
                 <strong>sAI Quests</strong>
-                <button class="btn-round" onclick="toggleTheme()" id="themeToggleBtn"
-                    title="Переключити тему">☀️</button>
+                <div class="row" style="gap: 6px;">
+                    <button class="btn-round" onclick="toggleSidebarHeader()" id="sidebarHeaderToggleBtn"
+                        title="Згорнути/розгорнути панель">▲</button>
+                    <button class="btn-round" onclick="toggleTheme()" id="themeToggleBtn"
+                        title="Переключити тему">☀️</button>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Gemini API Key</label>
-                <input type="password" id="apiKey" placeholder="Введи свій API Key..." oninput="saveApiKey(this.value)">
-            </div>
+            <div id="sidebarHeaderBody" class="sidebar-header-body">
+                <div class="form-group">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="apiKey" placeholder="Введи свій API Key..."
+                        oninput="saveApiKey(this.value)">
+                </div>
 
-            <div class="form-group">
-                <label>Модель Gemini</label>
-                <select id="modelSelect" onchange="saveSelectedModel(this.value)">
-                    <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
-                    <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                    <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
-                    <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
-                    <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label>Модель Gemini</label>
+                    <select id="modelSelect" onchange="saveSelectedModel(this.value)">
+                        <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+                        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                        <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+                        <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+                        <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                    </select>
+                </div>
 
-            <div class="row">
-                <select id="gameSelect" onchange="loadSelectedGame()"></select>
-                <button onclick="createNewGame()" title="Створити гру">+</button>
-                <button onclick="exportCurrentGame()" title="Експорт у JSON">📤</button>
-                <button onclick="document.getElementById('importFileInput').click()" title="Імпорт з JSON">📥</button>
-                <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importGame(this)">
-                <button class="danger" onclick="deleteCurrentGame()" title="Видалити гру">🗑</button>
+                <div class="row">
+                    <select id="gameSelect" onchange="loadSelectedGame()"></select>
+                    <button onclick="createNewGame()" title="Створити гру">+</button>
+                    <button onclick="exportCurrentGame()" title="Експорт у JSON">📤</button>
+                    <button onclick="document.getElementById('importFileInput').click()"
+                        title="Імпорт з JSON">📥</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none"
+                        onchange="importGame(this)">
+                    <button class="danger" onclick="deleteCurrentGame()" title="Видалити гру">🗑</button>
+                </div>
             </div>
         </div>
 
@@ -733,8 +797,14 @@
             <div class="card">
                 <div class="card-header">🌍 Оточення та Світ</div>
                 <div class="form-group">
-                    <label>Локація</label>
-                    <textarea rows="2" id="stateLocation" onchange="updateGameState()"></textarea>
+                    <label>Назва локації</label>
+                    <input type="text" id="stateLocationName" placeholder="Назва поточної локації"
+                        onchange="updateGameState()">
+                </div>
+                <div class="form-group">
+                    <label>Опис локації</label>
+                    <textarea rows="4" id="stateLocationDescription" placeholder="Детальний опис поточної локації"
+                        onchange="updateGameState()"></textarea>
                 </div>
             </div>
 
@@ -836,6 +906,8 @@
             {
                 title: "Таємниця закинутої таверни",
                 day: 1,
+                locationName: "Запорошена таверна «Чорний Круг»",
+                locationDescription: "Стара напівзруйнована таверна на краю селища. Усередині пахне сирою деревиною, пилом і згаслим вогнищем; це тимчасовий прихисток під час негоди.",
                 location: "Запорошена таверна «Чорний Круг»",
                 timeOfDay: "Ніч",
                 objectives: "Знайти зашифровану карту до старої шахти",
@@ -851,12 +923,48 @@
         const TIME_STEPS = ["Ранок", "День", "Вечір", "Ніч"];
         const TIME_ICONS = { "Ранок": "🌅", "День": "☀️", "Вечір": "🌆", "Ніч": "🌙" };
 
+        // Local, network-independent fallback avatar (used only if generation/loading fails)
+        const FALLBACK_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="#3a3a46"/><circle cx="32" cy="24" r="12" fill="#8a8aa0"/><path d="M10 56c4-14 18-20 22-20s18 6 22 20" fill="#8a8aa0"/></svg>'
+        );
+
+        /* Map internal gender labels to English words for the image-generation prompt */
+        function genderToPromptWord(gender) {
+            if (gender === 'Чоловіча') return 'male';
+            if (gender === 'Жіноча') return 'female';
+            return 'person';
+        }
+
+        /* Build the pollinations.ai text prompt describing a character's portrait */
+        function buildAvatarPrompt(c) {
+            const genderWord = genderToPromptWord(c && c.gender);
+            const age = (c && c.age) || 25;
+            const race = ((c && c.race) || 'Людина').trim();
+            const personality = ((c && c.personality) || '').trim();
+            const appearance = ((c && c.appearance) || '').trim();
+            const promptParts = ['portrait', genderWord, `${age} years old`, race];
+            if (appearance) promptParts.push(appearance);
+            if (personality) promptParts.push(personality);
+            return promptParts.filter(Boolean).join(', ');
+        }
+
+        /* Build a full pollinations.ai image URL for a character, with a random seed */
+        function buildAvatarUrl(c) {
+            const prompt = buildAvatarPrompt(c);
+            const seed = Math.floor(Math.random() * 2147483647);
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=128&height=128&model=flux&nologo=true&seed=${seed}`;
+        }
+
         let db = null;
         let currentGame = null;
         let isGenerating = false;
         let currentOptions = [];
         // IDs of characters added during gameplay (before next player message)
         let pendingNewCharIds = [];
+        // IDs of characters manually added during gameplay; deletable until the next player message
+        let pendingManualCharIds = [];
+        // IDs of locations manually added during gameplay; deletable until the next player message
+        let pendingManualLocationIds = [];
 
         /* ==========================================
            1. RELATIONSHIPS ENGINE (0-100%)
@@ -960,6 +1068,17 @@
             if (btn) btn.innerText = current === 'light' ? '🌙' : '☀️';
         }
 
+        /* Renders an avatar <img> wrapped so a spinner shows while the image is still loading
+           (e.g. while pollinations.ai is generating it). Falls back to a local placeholder on error. */
+        function renderAvatarTag(url, sizeStyle = '') {
+            const safeUrl = url || FALLBACK_AVATAR;
+            const style = sizeStyle ? ` style="${sizeStyle}"` : '';
+            return `<span class="avatar-wrap loading"${style}>` +
+                `<span class="avatar-spinner"></span>` +
+                `<img src="${safeUrl}" class="char-avatar"${style} onload="this.parentElement.classList.remove('loading')" onerror="this.onerror=null; this.src='${FALLBACK_AVATAR}'; this.parentElement.classList.remove('loading');">` +
+                `</span>`;
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -968,6 +1087,26 @@
                 overlay.classList.toggle('active');
             } else {
                 sidebar.classList.toggle('collapsed');
+            }
+        }
+
+        function toggleSidebarHeader() {
+            const body = document.getElementById('sidebarHeaderBody');
+            const btn = document.getElementById('sidebarHeaderToggleBtn');
+            if (!body || !btn) return;
+            const isCollapsed = body.classList.toggle('collapsed');
+            btn.innerText = isCollapsed ? '▼' : '▲';
+            localStorage.setItem('sidebar_header_collapsed', isCollapsed ? '1' : '0');
+        }
+
+        function initSidebarHeaderState() {
+            const saved = localStorage.getItem('sidebar_header_collapsed');
+            const body = document.getElementById('sidebarHeaderBody');
+            const btn = document.getElementById('sidebarHeaderToggleBtn');
+            if (!body || !btn) return;
+            if (saved === '1') {
+                body.classList.add('collapsed');
+                btn.innerText = '▼';
             }
         }
 
@@ -1228,7 +1367,7 @@
                 try {
                     const promptGen = `Створи початковий світ та 2 головних персонажів для квесту: "${title}". Поверни JSON з полями:
                     {
-                      "location": "опис локації", "timeOfDay": "Ранок або День або Вечір або Ніч", "objectives": "цілі", "memory": "пам'ять",
+                      "locationName": "назва локації", "locationDescription": "детальний опис локації", "timeOfDay": "Ранок або День або Вечір або Ніч", "objectives": "цілі", "memory": "пам'ять",
                       "maleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 25, "role": "", "personality": "", "appearance": "", "seed": "m1" },
                       "femaleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 24, "role": "", "personality": "", "appearance": "", "seed": "f1" }
                     }`;
@@ -1255,6 +1394,8 @@
 
             if (!gameData) {
                 gameData = {
+                    locationName: defaultPreset.locationName || defaultPreset.location,
+                    locationDescription: defaultPreset.locationDescription || defaultPreset.location,
                     location: defaultPreset.location,
                     timeOfDay: defaultPreset.timeOfDay,
                     objectives: defaultPreset.objectives,
@@ -1267,34 +1408,44 @@
             const pId = "player_" + Date.now();
             const cId = "char_" + (Date.now() + 1);
 
+            const locationName = (gameData.locationName || gameData.location || 'Нова локація').trim();
+            const locationDescription = (gameData.locationDescription || gameData.location || '').trim();
+
             const newGame = {
                 title: title,
                 day: 1,
-                location: gameData.location,
+                locationName: locationName,
+                locationDescription: locationDescription,
+                location: locationName,
                 timeOfDay: gameData.timeOfDay,
                 objectives: gameData.objectives,
-                memory: gameData.memory ? (gameData.memory.startsWith('•') ? gameData.memory : `• День 1, ${gameData.timeOfDay}, ${gameData.location}: ${gameData.memory}`) : `• День 1, ${gameData.timeOfDay}, ${gameData.location}: Початок пригод.`,
+                memory: gameData.memory ? (gameData.memory.startsWith('•') ? gameData.memory : `• День 1, ${gameData.timeOfDay}, ${locationName}: ${gameData.memory}`) : `• День 1, ${gameData.timeOfDay}, ${locationName}: Початок пригод.`,
                 playerCharId: pId,
                 isStarted: false,
                 locations: [
                     {
                         id: "loc_" + Date.now(),
-                        name: gameData.location,
-                        description: gameData.location
+                        name: locationName,
+                        description: locationDescription
                     }
                 ],
-                characters: [
-                    {
-                        id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.maleCharacter.seed}`, relations: {}
-                    },
-                    {
-                        id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${gameData.femaleCharacter.seed}`, relations: { [pId]: 45 }
-                    }
-                ],
+                characters: [],
                 messages: [
                     { type: "narration", text: `Світ створено. Персонажі: ${gameData.maleCharacter.name} (${gameData.maleCharacter.race || 'Людина'}) та ${gameData.femaleCharacter.name} (${gameData.femaleCharacter.race || 'Людина'}). Натисніть «Почати гру».` }
                 ]
             };
+
+            const maleChar = {
+                id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, relations: {}
+            };
+            maleChar.avatar = buildAvatarUrl(maleChar);
+
+            const femaleChar = {
+                id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, relations: { [pId]: 45 }
+            };
+            femaleChar.avatar = buildAvatarUrl(femaleChar);
+
+            newGame.characters = [maleChar, femaleChar];
 
             const id = await dbSaveGame(newGame);
             saveLastActiveGameId(id);
@@ -1340,7 +1491,15 @@
         function updateGameState() {
             if (!currentGame) return;
             const oldTimeOfDay = currentGame.timeOfDay;
-            currentGame.location = document.getElementById('stateLocation').value;
+            const locationNameInput = document.getElementById('stateLocationName');
+            const locationDescriptionInput = document.getElementById('stateLocationDescription');
+            const legacyLocationInput = document.getElementById('stateLocation');
+            const locationName = (locationNameInput ? locationNameInput.value : (currentGame.locationName || currentGame.location || '')).trim();
+            const locationDescription = (locationDescriptionInput ? locationDescriptionInput.value : (currentGame.locationDescription || currentGame.location || '')).trim();
+            currentGame.locationName = locationName;
+            currentGame.locationDescription = locationDescription;
+            currentGame.location = locationName; // compatibility with existing game logic/imports
+            if (legacyLocationInput) legacyLocationInput.value = locationName;
             currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
             currentGame.objectives = document.getElementById('stateObjectives').value;
             currentGame.memory = document.getElementById('stateMemory').value;
@@ -1365,19 +1524,28 @@
         function renderAll(scrollMode = 'preserve') {
             if (!currentGame) return;
             currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
+            // Backward compatibility: old saves used one field `location` for both name and description.
+            if (!currentGame.locationName) currentGame.locationName = currentGame.location || '';
+            if (!currentGame.locationDescription) currentGame.locationDescription = currentGame.location || '';
+            currentGame.location = currentGame.locationName || currentGame.location || '';
             if (!Array.isArray(currentGame.locations)) {
                 currentGame.locations = [];
                 if (currentGame.location) {
                     currentGame.locations.push({
                         id: 'loc_' + Date.now(),
-                        name: currentGame.location,
-                        description: currentGame.location
+                        name: currentGame.locationName || currentGame.location,
+                        description: currentGame.locationDescription || currentGame.location
                     });
                 }
             }
             document.getElementById('gameStatePanel').style.display = 'flex';
             document.getElementById('currentGameTitle').innerText = currentGame.title;
-            document.getElementById('stateLocation').value = currentGame.location || '';
+            const stateLocationName = document.getElementById('stateLocationName');
+            const stateLocationDescription = document.getElementById('stateLocationDescription');
+            const legacyStateLocation = document.getElementById('stateLocation');
+            if (stateLocationName) stateLocationName.value = currentGame.locationName || currentGame.location || '';
+            if (stateLocationDescription) stateLocationDescription.value = currentGame.locationDescription || currentGame.location || '';
+            if (legacyStateLocation) legacyStateLocation.value = currentGame.location || currentGame.locationName || '';
             document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay || 'День';
             document.getElementById('stateObjectives').value = currentGame.objectives || '';
             document.getElementById('stateMemory').value = currentGame.memory || '';
@@ -1429,7 +1597,7 @@
                 const relVal = getRelation(c, currentGame.playerCharId);
                 const details = document.createElement('details');
                 details.className = 'char-details';
-                const avatarSrc = c.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${c.id}`;
+                const avatarSrc = c.avatar || FALLBACK_AVATAR;
                 // Is this a newly added character (pending slider display)?
                 const isPendingNew = pendingNewCharIds.includes(c.id);
 
@@ -1468,10 +1636,10 @@
 
                 details.innerHTML = `
                     <summary>
-                        <img src="${avatarSrc}" class="char-avatar" style="width:28px; height:28px;">
+                        ${renderAvatarTag(avatarSrc, 'width:28px;height:28px;')}
                         <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name || ''} ${c.surname || ''}</span>
                         ${summaryRel}
-                        <button class="danger" style="padding:1px 6px; font-size:12px;" onclick="deleteCharacter(event, '${c.id}')">✕</button>
+                        ${(!currentGame.isStarted || pendingManualCharIds.includes(c.id) || !!c.pendingManualDeletion) ? `<button class="danger" style="padding:1px 6px; font-size:12px;" onclick="deleteCharacter(event, '${c.id}')">✕</button>` : `<span title="Після початку гри персонаж заблокований" style="font-size:12px; opacity:0.45; padding:1px 6px;">🔒</span>`}
                     </summary>
                     <div class="char-details-body">
                         <div class="form-group">
@@ -1518,7 +1686,8 @@
                             <div class="row">
                                 <input type="text" value="${c.avatar && !c.avatar.startsWith('data:') ? c.avatar : ''}" onchange="updateCharData('${c.id}', 'avatar', this.value)">
                                 <input type="file" accept="image/*" style="display:none;" id="file_${c.id}" onchange="uploadAvatarFile('${c.id}', this)">
-                                <button type="button" style="padding:4px 8px; font-size:12px;" onclick="document.getElementById('file_${c.id}').click()">📁</button>
+                                <button type="button" style="padding:4px 8px; font-size:12px;" onclick="document.getElementById('file_${c.id}').click()" title="Завантажити файл">📁</button>
+                                <button type="button" style="padding:4px 8px; font-size:12px;" onclick="generateAvatar('${c.id}')" title="Згенерувати аватар">🎨</button>
                             </div>
                         </div>
                     </div>
@@ -1535,14 +1704,31 @@
             }
         }
 
+        /* Generate (or regenerate) a character avatar via pollinations.ai image generation,
+           using race, gender, age, personality and appearance as the prompt. */
+        function generateAvatar(charId) {
+            if (!currentGame) return;
+            const c = currentGame.characters.find(char => char.id === charId);
+            if (!c) return;
+
+            c.avatar = buildAvatarUrl(c);
+            dbSaveGame(currentGame);
+            renderCharacterSelectors();
+            renderCharactersList();
+            renderMessages();
+        }
+
         function addNewCharacter() {
             const id = 'char_' + Date.now();
-            currentGame.characters.push({
-                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`, relations: {}
-            });
+            const newChar = {
+                id: id, name: "Новий", surname: "Персонаж", race: "Людина", gender: "Чоловіча", age: 25, role: "Персонаж", personality: "Спокійний", appearance: "Звичайний", pendingManualDeletion: currentGame.isStarted, relations: {}
+            };
+            newChar.avatar = buildAvatarUrl(newChar);
+            currentGame.characters.push(newChar);
             // Track as pending so sliders appear during gameplay
             if (currentGame.isStarted) {
                 pendingNewCharIds.push(id);
+                pendingManualCharIds.push(id);
             }
             dbSaveGame(currentGame);
             renderAll();
@@ -1563,11 +1749,19 @@
         function deleteCharacter(e, id) {
             e.stopPropagation();
             e.preventDefault();
+            if (!currentGame) return;
+
             const char = currentGame.characters.find(c => c.id === id);
+            const canDelete = !currentGame.isStarted || pendingManualCharIds.includes(id) || !!char?.pendingManualDeletion;
+            if (!canDelete) {
+                alert('Після початку гри цього персонажа не можна видалити.');
+                return;
+            }
             const charName = char ? `${char.name || ''} ${char.surname || ''}`.trim() : 'цього персонажа';
             if (!confirm(`Видалити персонажа "${charName}"?`)) return;
             currentGame.characters = currentGame.characters.filter(c => c.id !== id);
             pendingNewCharIds = pendingNewCharIds.filter(pid => pid !== id);
+            pendingManualCharIds = pendingManualCharIds.filter(pid => pid !== id);
             dbSaveGame(currentGame);
             renderAll();
         }
@@ -1582,8 +1776,25 @@
             currentGame.locations.push({
                 id: id,
                 name: "Нова локація",
-                description: ""
+                description: "",
+                pendingManualDeletion: currentGame.isStarted
             });
+            if (currentGame.isStarted) {
+                pendingManualLocationIds.push(id);
+            }
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function updateLocationName(id, val) {
+            if (!currentGame || !Array.isArray(currentGame.locations)) return;
+            const loc = currentGame.locations.find(l => l.id === id);
+            if (!loc) return;
+            loc.name = val.trim();
+            if (isCurrentLocationRecord(loc)) {
+                currentGame.locationName = loc.name;
+                currentGame.location = loc.name;
+            }
             dbSaveGame(currentGame);
             renderLocationsList();
         }
@@ -1591,25 +1802,37 @@
         function updateLocationDescription(id, val) {
             if (!currentGame || !Array.isArray(currentGame.locations)) return;
             const loc = currentGame.locations.find(l => l.id === id);
-            if (loc) {
-                loc.description = val;
-                const firstLine = val.trim().split('\n')[0].trim();
-                if (firstLine) {
-                    loc.name = firstLine.length > 35 ? firstLine.slice(0, 32) + '...' : firstLine;
-                }
-                dbSaveGame(currentGame);
-                renderLocationsList();
+            if (!loc) return;
+            loc.description = val;
+            if (isCurrentLocationRecord(loc)) {
+                currentGame.locationDescription = val;
+                currentGame.location = currentGame.locationName || currentGame.location || '';
             }
+            dbSaveGame(currentGame);
+            renderLocationsList();
+        }
+
+        function isCurrentLocationRecord(loc) {
+            if (!currentGame || !loc) return false;
+            const currentName = (currentGame.locationName || currentGame.location || '').trim().toLowerCase();
+            return !!currentName && !!loc.name && loc.name.trim().toLowerCase() === currentName;
         }
 
         function deleteLocation(e, id) {
             e.stopPropagation();
             e.preventDefault();
             if (!currentGame || !Array.isArray(currentGame.locations)) return;
+
             const loc = currentGame.locations.find(l => l.id === id);
+            const canDelete = !currentGame.isStarted || pendingManualLocationIds.includes(id) || !!loc?.pendingManualDeletion;
+            if (!canDelete) {
+                alert('Після початку гри цю локацію не можна видалити.');
+                return;
+            }
             const locName = loc ? (loc.name || 'цю локацію') : 'цю локацію';
             if (!confirm(`Видалити локацію "${locName}"?`)) return;
             currentGame.locations = currentGame.locations.filter(l => l.id !== id);
+            pendingManualLocationIds = pendingManualLocationIds.filter(pid => pid !== id);
             dbSaveGame(currentGame);
             renderLocationsList();
         }
@@ -1621,11 +1844,11 @@
             if (!currentGame) return;
             if (!Array.isArray(currentGame.locations)) {
                 currentGame.locations = [];
-                if (currentGame.location) {
+                if (currentGame.locationName || currentGame.location) {
                     currentGame.locations.push({
                         id: 'loc_' + Date.now(),
-                        name: currentGame.location,
-                        description: currentGame.location
+                        name: currentGame.locationName || currentGame.location,
+                        description: currentGame.locationDescription || currentGame.location
                     });
                 }
             }
@@ -1639,10 +1862,8 @@
                 const details = document.createElement('details');
                 details.className = 'char-details';
 
-                const isCurrent = currentGame.location && (
-                    (loc.name && loc.name.trim().toLowerCase() === currentGame.location.trim().toLowerCase()) ||
-                    (loc.description && loc.description.trim().toLowerCase() === currentGame.location.trim().toLowerCase())
-                );
+                const currentLocationName = (currentGame.locationName || currentGame.location || '').trim().toLowerCase();
+                const isCurrent = !!currentLocationName && !!loc.name && loc.name.trim().toLowerCase() === currentLocationName;
 
                 const titleText = loc.name || (loc.description ? loc.description.trim().split('\n')[0].slice(0, 30) : 'Нова локація');
 
@@ -1653,9 +1874,13 @@
                             ${titleText}
                         </span>
                         ${isCurrent ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--accent-color); color: white; white-space: nowrap;">Поточна</span>` : ''}
-                        <button class="danger" style="padding: 1px 6px; font-size: 12px; margin-left: 4px;" onclick="deleteLocation(event, '${loc.id}')" title="Видалити локацію">✕</button>
+                        ${(!currentGame.isStarted || pendingManualLocationIds.includes(loc.id) || !!loc.pendingManualDeletion) ? `<button class="danger" style="padding: 1px 6px; font-size: 12px; margin-left: 4px;" onclick="deleteLocation(event, '${loc.id}')" title="Видалити локацію">✕</button>` : `<span title="Після початку гри локація заблокована" style="font-size: 12px; opacity: 0.45; margin-left: 4px; padding: 1px 6px;">🔒</span>`}
                     </summary>
                     <div class="char-details-body" style="padding-top: 8px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Назва локації</label>
+                            <input type="text" value="${loc.name || ''}" placeholder="Назва локації..." onchange="updateLocationName('${loc.id}', this.value)">
+                        </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Опис локації</label>
                             <textarea rows="5" placeholder="Опис локації..." onchange="updateLocationDescription('${loc.id}', this.value)">${loc.description || ''}</textarea>
@@ -1664,6 +1889,51 @@
                 `;
                 container.appendChild(details);
             });
+        }
+
+        /* Location helpers */
+        function normalizeLocationName(name) {
+            return String(name || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[«»“”„"']/g, '')
+                .replace(/\s+/g, ' ');
+        }
+
+        function findKnownLocationByName(name) {
+            if (!currentGame || !Array.isArray(currentGame.locations)) return null;
+            const target = normalizeLocationName(name);
+            if (!target) return null;
+            return currentGame.locations.find(loc => normalizeLocationName(loc.name) === target) || null;
+        }
+
+        function setCurrentLocationByName(name, description = null) {
+            if (!currentGame) return null;
+            const cleanName = String(name || '').trim();
+            if (!cleanName) return null;
+            if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
+
+            const existing = findKnownLocationByName(cleanName);
+            if (existing) {
+                currentGame.locationName = existing.name;
+                currentGame.location = existing.name;
+                if (description !== null && String(description).trim()) {
+                    existing.description = String(description).trim();
+                }
+                currentGame.locationDescription = existing.description || '';
+                return existing;
+            }
+
+            const newLocation = {
+                id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                name: cleanName,
+                description: description !== null ? String(description).trim() : ''
+            };
+            currentGame.locations.push(newLocation);
+            currentGame.locationName = newLocation.name;
+            currentGame.location = newLocation.name;
+            currentGame.locationDescription = newLocation.description;
+            return newLocation;
         }
 
         /* Helper to format full character profile for Gemini */
@@ -1689,6 +1959,25 @@
   - Зовнішність та спорядження: ${c.appearance || 'Звичайна'}${relText}`;
         }
 
+        /* Checks whether an AI-proposed "new" character actually already exists in the game
+           (matched by id, or by full name if no id / id not found), to avoid creating duplicates
+           e.g. when the AI re-lists the player's existing companion as if newly introduced. */
+        function findExistingCharacterMatch(nc) {
+            if (!currentGame || !nc) return null;
+            if (nc.id) {
+                const byId = currentGame.characters.find(c => c.id === nc.id);
+                if (byId) return byId;
+            }
+            if (nc.name) {
+                const fullName = `${nc.name} ${nc.surname || ''}`.trim().toLowerCase();
+                if (fullName) {
+                    const byName = currentGame.characters.find(c => `${c.name || ''} ${c.surname || ''}`.trim().toLowerCase() === fullName);
+                    if (byName) return byName;
+                }
+            }
+            return null;
+        }
+
         /* Helper to format recent conversation history */
         function formatRecentHistory(maxMessages = 10) {
             if (!currentGame || !currentGame.messages || currentGame.messages.length === 0) return "Історія поки що порожня.";
@@ -1709,6 +1998,57 @@
             }).join('\n');
         }
 
+        /* Deep clone helper for state snapshots (memory, relations, locations, etc.) */
+        function deepClone(obj) {
+            if (obj === undefined || obj === null) return obj;
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        /* Capture a snapshot of the world state (memory, objectives, day, time, location, characters/relations)
+           at the moment a user message is sent, so we can roll back to it if that message is later edited. */
+        function captureWorldStateSnapshot() {
+            if (!currentGame) return null;
+            return {
+                memory: currentGame.memory,
+                objectives: currentGame.objectives,
+                day: currentGame.day,
+                timeOfDay: currentGame.timeOfDay,
+                pendingDayTransition: currentGame.pendingDayTransition,
+                location: currentGame.location,
+                locationName: currentGame.locationName,
+                locationDescription: currentGame.locationDescription,
+                locations: deepClone(currentGame.locations),
+                characters: deepClone(currentGame.characters)
+            };
+        }
+
+        /* Restore a previously captured world state snapshot (used when editing a past user message). */
+        function restoreWorldStateSnapshot(snapshot) {
+            if (!currentGame || !snapshot) return;
+            currentGame.memory = snapshot.memory;
+            currentGame.objectives = snapshot.objectives;
+            currentGame.day = snapshot.day;
+            currentGame.timeOfDay = snapshot.timeOfDay;
+            currentGame.pendingDayTransition = snapshot.pendingDayTransition;
+            currentGame.location = snapshot.location;
+            currentGame.locationName = snapshot.locationName;
+            currentGame.locationDescription = snapshot.locationDescription;
+            currentGame.locations = deepClone(snapshot.locations) || [];
+            currentGame.characters = deepClone(snapshot.characters) || currentGame.characters;
+        }
+
+        /* Freeze the relationship value displayed on each character message. */
+        function snapshotMessageRelations(startIndex = 0) {
+            if (!currentGame || !Array.isArray(currentGame.messages)) return;
+            for (let i = Math.max(0, startIndex); i < currentGame.messages.length; i++) {
+                const message = currentGame.messages[i];
+                if (!message || message.type !== 'character' || !message.charId) continue;
+                const char = currentGame.characters.find(c => c.id === message.charId);
+                if (!char || char.id === currentGame.playerCharId) continue;
+                message.relationAtMessage = getRelation(char, currentGame.playerCharId);
+            }
+        }
+
         /* Message Rendering & Editing Last User Message in Input */
         function renderMessages(scrollMode = 'preserve') {
             const container = document.getElementById('chatMessages');
@@ -1721,7 +2061,7 @@
             }
 
             const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Ти", surname: "", avatar: "" };
-            const playerAvatar = playerChar.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=player`;
+            const playerAvatar = playerChar.avatar || FALLBACK_AVATAR;
 
             // Find index of last user message
             let lastUserIdx = -1;
@@ -1742,7 +2082,7 @@
                         <div class="char-header user-header">
                             ${isLastUser ? `<button class="btn-edit-msg" onclick="editLastUserMessage(${idx})" title="Редагувати в полі вводу">✏️</button>` : ''}
                             <span class="char-name">${playerChar.name || ''} ${playerChar.surname || ''}</span>
-                            <img src="${playerAvatar}" class="char-avatar" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback';">
+                            ${renderAvatarTag(playerAvatar)}
                         </div>
                         <div class="char-text">${m.text}</div>
                     `;
@@ -1752,16 +2092,17 @@
                 } else if (m.type === 'character') {
                     div.className = 'message character';
                     const char = currentGame.characters.find(c => c.id === m.charId) || { name: m.charName || "Персонаж", surname: "", avatar: "", id: m.charId || 'default' };
-                    const avatarSrc = char.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${char.id}`;
+                    const avatarSrc = char.avatar || FALLBACK_AVATAR;
                     const isPlayer = char.id === currentGame.playerCharId;
-                    const relToPlayer = getRelation(char, currentGame.playerCharId);
+                    const storedRelation = Number(m.relationAtMessage);
+                    const relToPlayer = Number.isFinite(storedRelation) ? storedRelation : getRelation(char, currentGame.playerCharId);
                     const relBadge = !isPlayer
                         ? `<span class="rel-badge ${getRelClass(relToPlayer)}" title="Відношення до вас: ${relToPlayer}% (${getRelDescription(relToPlayer)})">${getRelIcon(relToPlayer)} ${relToPlayer}%</span>`
                         : '';
 
                     div.innerHTML = `
                         <div class="char-header">
-                            <img src="${avatarSrc}" class="char-avatar" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=fallback';">
+                            ${renderAvatarTag(avatarSrc)}
                             <span class="char-name">${char.name || ''} ${char.surname || ''}</span>
                             ${relBadge}
                         </div>
@@ -1828,12 +2169,27 @@
         /* Edit last user message directly inside the input box */
         async function editLastUserMessage(index) {
             if (!currentGame || !currentGame.messages[index]) return;
-            const oldText = currentGame.messages[index].text;
+            const oldMessage = currentGame.messages[index];
+            const oldText = oldMessage.text;
+
+            // Roll back memory, objectives, day/time, locations and character relations
+            // to how they were right before this message was sent, undoing anything the
+            // AI added/changed as a *consequence* of this message (and any later ones).
+            if (oldMessage.stateSnapshot) {
+                restoreWorldStateSnapshot(oldMessage.stateSnapshot);
+            }
 
             // Remove this message and subsequent messages
             currentGame.messages = currentGame.messages.slice(0, index);
+
+            // Any "pending" (not-yet-confirmed) character/location bookkeeping tied to
+            // messages we just erased is no longer relevant.
+            pendingNewCharIds = [];
+            pendingManualCharIds = [];
+            pendingManualLocationIds = [];
+
             await dbSaveGame(currentGame);
-            renderMessages('bottom');
+            renderAll('bottom');
 
             // Put into input field and focus
             const inputArea = document.getElementById('userInput');
@@ -1861,7 +2217,8 @@
 Ти — майстер інтерактивного рольового квесту.
 НАЗВА КВЕСТУ: ${currentGame.title}
 ПОТОЧНИЙ ДЕНЬ: День ${currentGame.day || 1} (Обов'язково враховуй поточний день у відповіді!)
-ПОТОЧНА ЛОКАЦІЯ: ${currentGame.location}
+ПОТОЧНА ЛОКАЦІЯ: ${currentGame.locationName || currentGame.location}
+ОПИС ПОТОЧНОЇ ЛОКАЦІЇ: ${currentGame.locationDescription || ''}
 ПОТОЧНИЙ ЧАС ДОБИ: ${currentGame.timeOfDay} (Обов'язково відповідай цьому часу доби!)
 ЦІЛІ КВЕСТУ: ${currentGame.objectives}
 ПАМ'ЯТЬ КВЕСТУ: ${currentGame.memory}
@@ -1878,13 +2235,14 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
    - При відношенні 85-94%: між персонажем та гравцем різної статі можуть виникати романтичні почуття — флірт, ніжність, натяки на взаємний потяг.
    - При відношенні 95-100%: можлива інтимна близькість між персонажем та гравцем (якщо вони різної статі та це органічно випливає з ситуації). Описуй художньо, але відверто та без цензури.
 4. НОВІ ПЕРСОНАЖІ: Якщо на старті з'являються додаткові особи (наприклад, вороги, вартові, свідки), опиши їх у масиві "newCharacters".
+   ВАЖЛИВО: у "newCharacters" вказуй ТІЛЬКИ персонажів, яких немає у переліку "ПЕРСОНАЖІ" вище. Гравця та вже перелічених персонажів (наприклад, супутника) НЕ додавай туди повторно.
    Встанови "initialRelationToPlayer" (0-100%):
    - Вороги, розбійники, монстри: 0-20% (ворожість/ненависть)
    - Підозрілі чужинці: 25-40%
    - Нейтральні містяни: 45-55%
    - Союзники/врятовані: 60-80%
 5. Згенеруй стартову сцену, що занурює гравця в атмосферу та створює початковий виклик.
-6. ЛОКАЦІЇ: Якщо на старті квесту є нова або стартова локація, додай її опис у "newLocations": [{ "name": "Назва", "description": "Опис" }].
+6. ЛОКАЦІЇ: Назву та опис стартової локації зберігай ОКРЕМО. У відповіді для початкових даних обов'язково поверни "locationName" як коротку назву та "locationDescription" як детальний опис. Не змішуй назву з описом.
 
 Поверни JSON:
 {
@@ -1933,11 +2291,13 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                 currentGame.isStarted = true;
                 currentGame.day = typeof currentGame.day === 'number' && currentGame.day >= 1 ? currentGame.day : 1;
                 currentGame.messages = [];
+                const openingMessageStartIndex = 0;
 
                 // Add any new characters created at start
                 if (result.newCharacters && Array.isArray(result.newCharacters)) {
                     result.newCharacters.forEach(nc => {
                         if (!nc || !nc.name) return;
+                        if (findExistingCharacterMatch(nc)) return; // already exists, don't duplicate
                         const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
                         let initRel = 50;
                         if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
@@ -1956,9 +2316,9 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                             role: nc.role || "Незнайомець",
                             personality: nc.personality || "Звичайний",
                             appearance: nc.appearance || "Звичайна",
-                            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
                             relations: { [currentGame.playerCharId]: initRel }
                         };
+                        newCharObj.avatar = buildAvatarUrl(newCharObj);
                         currentGame.characters.push(newCharObj);
                     });
                 }
@@ -1972,9 +2332,12 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                         }
                     });
                 }
+                snapshotMessageRelations(openingMessageStartIndex);
                 if (result.updatedMemory) currentGame.memory = result.updatedMemory;
                 if (result.updatedObjectives) currentGame.objectives = result.updatedObjectives;
-                if (result.newLocation && result.newLocation.trim()) currentGame.location = result.newLocation.trim();
+                if (result.newLocation && result.newLocation.trim()) {
+                    setCurrentLocationByName(result.newLocation.trim());
+                }
                 if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
                 if (result.newLocations && Array.isArray(result.newLocations)) {
                     result.newLocations.forEach(nl => {
@@ -1982,12 +2345,22 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
                         const locName = (typeof nl === 'string' ? nl : (nl.name || '')).trim();
                         const locDesc = (typeof nl === 'string' ? nl : (nl.description || nl.name || '')).trim();
                         if (!locDesc) return;
-                        if (!currentGame.locations.some(l => (locName && l.name && l.name.toLowerCase() === locName.toLowerCase()) || (locDesc && l.description && l.description.toLowerCase() === locDesc.toLowerCase()))) {
+                        const existing = findKnownLocationByName(locName) || currentGame.locations.find(l =>
+                            locDesc && l.description && l.description.trim().toLowerCase() === locDesc.toLowerCase()
+                        );
+                        if (!existing) {
                             currentGame.locations.push({
                                 id: 'loc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                                 name: locName || locDesc.split('\n')[0].slice(0, 35),
                                 description: locDesc
                             });
+                        } else if (locDesc && (!existing.description || existing.description === existing.name)) {
+                            existing.description = locDesc;
+                        }
+                        if (locName && locName.toLowerCase() === (currentGame.locationName || currentGame.location || '').toLowerCase()) {
+                            currentGame.locationName = locName;
+                            currentGame.location = locName;
+                            currentGame.locationDescription = locDesc;
                         }
                     });
                 }
@@ -2032,8 +2405,10 @@ ${otherCharacters.map(c => formatCharacterDetails(c, false)).join('\n\n')}
 ПОТОЧНИЙ СТАН СВІТУ:
 - Назва: ${currentGame.title}
 - Поточний день: День ${currentGame.day || 1} (СУВОРО ВРАХОВУЙ У ВІДПОВІДІ!)
-- Локація: ${currentGame.location}
+- Назва поточної локації: ${currentGame.locationName || currentGame.location}
+- Опис поточної локації: ${currentGame.locationDescription || ''}
 - Відомі локації: ${currentGame.locations && currentGame.locations.length > 0 ? currentGame.locations.map(l => (l.name ? `«${l.name}»` : '') + (l.description ? `: ${l.description}` : '')).join('; ') : currentGame.location}
+- ВАЖЛИВО: якщо місце вже є у списку "Відомі локації", вважай це тією самою локацією навіть при поверненні до неї. Не створюй дубль лише через новий опис сцени.
 - Час доби: ${currentGame.timeOfDay} (СУВОРО ДОТРИМУЙСЯ! Якщо зазначено "Ніч", персонажі не можуть говорити про денне світло, якщо тільки час доби не змінюється на ранок).
 - Цілі квесту: ${currentGame.objectives || 'Немає'}
 - Пам'ять квесту: ${currentGame.memory || 'Немає'}
@@ -2064,6 +2439,7 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
      Якщо відношення не змінилися, поверни null.
 3. ПОЯВА НОВИХ ПЕРСОНАЖІВ (НОВІ ВОРОГИ / СОЮЗНИКИ / НЕЗНАЙОМЦІ):
    Якщо в сцені з'являється новий персонаж, обов'язково додай його опис у масив "newCharacters".
+   ВАЖЛИВО: у "newCharacters" вказуй ТІЛЬКИ персонажів, яких справді ще немає серед "ГРАВЕЦЬ" та "ПРИСУТНІ ПЕРСОНАЖІ" вище. Ніколи не додавай туди вже наявного персонажа повторно, навіть з іншим ID.
    Встанови його "initialRelationToPlayer" (0-100%) відповідно до контексту:
    - Вороги, розбійники, агресивні монстри, вбивці: 0-20% (ворожість / ненависть).
    - Підозрілі вартові, холодні чужинці, конкуренти: 25-40% (настороженість / підозра).
@@ -2074,9 +2450,12 @@ ${otherCharacters.length > 0 ? otherCharacters.map(c => formatCharacterDetails(c
    - Якщо персонажі лягають спати, ночують, довго чекають або здійснюють тривалий перехід, час доби та день змінюються. Якщо настає ранок наступного дня або минає доба чи більше, обов'язково відобрази це в оповіді, онови "newTimeOfDay" ("Ранок", "День", "Вечір" або "Ніч") та поверни оновлений номер дня у "newDay" (наприклад: ${(currentGame.day || 1) + 1}).
    - Якщо день не змінився, поверни "newDay": null. Якщо час доби не змінився, поверни "newTimeOfDay": null.
 5. ЛОКАЦІЯ ТА ПОДОРОЖ:
-   - Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково опиши подорож та поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
-   - Якщо в сцені з'являється, досліджується або деталізується нова локація, обов'язково додай її опис у масив "newLocations".
-6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Зверни увагу на формат: спочатку день, потім час доби, потім назва поточної локації, а вже потім примітка (наприклад: "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.location}: Знайшли зашифровану карту"), або просто саму примітку. Якщо оновилися цілі, вкажи їх у "updatedObjectives".
+   - Якщо гравець або персонажі переміщуються, йдуть в інше місце чи подорожують, обов'язково поверни нову назву локації у полі "newLocation". Якщо локація не змінилася, поверни null.
+   - ПЕРЕД створенням будь-якої нової локації ОБОВ'ЯЗКОВО перевір список "Відомі локації" вище. Якщо така локація вже існує (навіть якщо персонажі повернулися до неї після подорожі або опис сцени зараз відрізняється), НЕ створюй дублікат.
+   - "newLocation" позначає лише поточне місце. Якщо ця назва вже є у "Відомих локаціях", це повернення до існуючої локації.
+   - "newLocations" має містити ТІЛЬКИ локації, яких ще немає у "Відомих локаціях". Не додавай туди вже відомі локації.
+   - Якщо в сцені з'являється справді нова локація, додай її у "newLocations" з ОКРЕМИМИ полями "name" (коротка назва) і "description" (детальний опис).
+6. ПАМ'ЯТЬ ТА ЦІЛІ: Якщо трапилася важлива подія, запиши короткий факт у "newMemoryEntry". Зверни увагу на формат: спочатку день, потім час доби, потім назва поточної локації, а вже потім примітка (наприклад: "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.locationName || currentGame.location}: Знайшли зашифровану карту"), або просто саму примітку. Якщо оновилися цілі, вкажи їх у "updatedObjectives".
 
 ОСТАННІЙ КОНТЕКСТ ДІАЛОГУ ТА ПОДІЙ:
 ${formatRecentHistory(8)}
@@ -2114,7 +2493,7 @@ ${formatRecentHistory(8)}
   ] або null,
   "newDay": ${(currentGame.day || 1) + 1} (новий номер дня, якщо настав наступний день/минула доба, інакше null),
   "newTimeOfDay": "Ранок або День або Вечір або Ніч (якщо час доби змінився) або null",
-  "newMemoryEntry": "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.location}: Короткий новий факт для пам'яті (або null)",
+  "newMemoryEntry": "День ${currentGame.day || 1}, ${currentGame.timeOfDay}, ${currentGame.locationName || currentGame.location}: Короткий новий факт для пам'яті (або null)",
   "updatedObjectives": "Оновлені цілі або null"
 }`;
 
@@ -2131,11 +2510,13 @@ ${formatRecentHistory(8)}
                 if (!response.ok) throw new Error("HTTP " + response.status);
                 const data = await response.json();
                 const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                const responseMessageStartIndex = currentGame.messages.length;
 
                 // Add any newly introduced characters from AI
                 if (result.newCharacters && Array.isArray(result.newCharacters)) {
                     result.newCharacters.forEach(nc => {
                         if (!nc || !nc.name) return;
+                        if (findExistingCharacterMatch(nc)) return; // already exists, don't duplicate
                         const newId = nc.id || ('char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
                         let initRel = 50;
                         if (nc.initialRelationToPlayer !== undefined && nc.initialRelationToPlayer !== null) {
@@ -2154,9 +2535,9 @@ ${formatRecentHistory(8)}
                             role: nc.role || "Незнайомець",
                             personality: nc.personality || "Звичайний",
                             appearance: nc.appearance || "Звичайна",
-                            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
                             relations: { [currentGame.playerCharId]: initRel }
                         };
+                        newCharObj.avatar = buildAvatarUrl(newCharObj);
                         currentGame.characters.push(newCharObj);
                         // Track as pending so sliders appear until next player message
                         pendingNewCharIds.push(newId);
@@ -2186,9 +2567,9 @@ ${formatRecentHistory(8)}
                                     role: roleName,
                                     personality: isEnemy ? "Ворожий та агресивний" : "Спокійний",
                                     appearance: "",
-                                    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${newId}`,
                                     relations: { [currentGame.playerCharId]: isEnemy ? 15 : 50 }
                                 };
+                                targetChar.avatar = buildAvatarUrl(targetChar);
                                 currentGame.characters.push(targetChar);
                                 // Track as pending so sliders appear until next player message
                                 pendingNewCharIds.push(newId);
@@ -2216,8 +2597,11 @@ ${formatRecentHistory(8)}
                     }
                 }
 
-                if (result.newLocation && typeof result.newLocation === 'string' && result.newLocation.trim() && result.newLocation.trim() !== currentGame.location) {
-                    currentGame.location = result.newLocation.trim();
+                // Freeze relationship badges for the messages generated in this response.
+                snapshotMessageRelations(responseMessageStartIndex);
+
+                if (result.newLocation && typeof result.newLocation === 'string' && result.newLocation.trim()) {
+                    setCurrentLocationByName(result.newLocation.trim());
                 }
 
                 if (!Array.isArray(currentGame.locations)) currentGame.locations = [];
@@ -2228,9 +2612,8 @@ ${formatRecentHistory(8)}
                         const locName = (typeof nl === 'string' ? nl : (nl.name || '')).trim();
                         const locDesc = (typeof nl === 'string' ? nl : (nl.description || nl.name || '')).trim();
                         if (!locDesc) return;
-                        const existing = currentGame.locations.find(l =>
-                            (locName && l.name && l.name.toLowerCase() === locName.toLowerCase()) ||
-                            (locDesc && l.description && l.description.toLowerCase() === locDesc.toLowerCase())
+                        const existing = findKnownLocationByName(locName) || currentGame.locations.find(l =>
+                            locDesc && l.description && l.description.trim().toLowerCase() === locDesc.toLowerCase()
                         );
                         if (!existing) {
                             currentGame.locations.push({
@@ -2241,29 +2624,44 @@ ${formatRecentHistory(8)}
                         } else if (locDesc && (!existing.description || existing.description === existing.name)) {
                             existing.description = locDesc;
                         }
+                        if (locName && (locName.toLowerCase() === (currentGame.locationName || currentGame.location || '').toLowerCase())) {
+                            currentGame.locationName = locName;
+                            currentGame.location = locName;
+                            currentGame.locationDescription = locDesc;
+                        }
                     });
                 }
 
-                if (currentGame.location && !currentGame.locations.some(l => (l.name && l.name.toLowerCase() === currentGame.location.toLowerCase()) || (l.description && l.description.toLowerCase().includes(currentGame.location.toLowerCase())))) {
-                    currentGame.locations.push({
-                        id: 'loc_' + Date.now(),
-                        name: currentGame.location,
-                        description: currentGame.location
-                    });
-                }
-
-                if (result.newDay !== undefined && result.newDay !== null) {
-                    const parsedDay = typeof result.newDay === 'number' ? result.newDay : parseInt(String(result.newDay).replace(/\D/g, ''), 10);
-                    if (!isNaN(parsedDay) && parsedDay >= 1) {
-                        currentGame.day = parsedDay;
-                        updateDayDisplay();
+                const currentLocationName = currentGame.locationName || currentGame.location;
+                if (currentLocationName) {
+                    const currentLocationRecord = findKnownLocationByName(currentLocationName);
+                    if (currentLocationRecord) {
+                        currentGame.locationName = currentLocationRecord.name;
+                        currentGame.location = currentLocationRecord.name;
+                        currentGame.locationDescription = currentLocationRecord.description || currentGame.locationDescription || '';
+                    } else {
+                        setCurrentLocationByName(currentLocationName, currentGame.locationDescription || '');
                     }
-                } else if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
+                }
+
+                let dayWasSet = false;
+                if (result.newDay !== undefined && result.newDay !== null) {
+                    const rawNewDay = String(result.newDay).trim().toLowerCase();
+                    if (rawNewDay !== '' && rawNewDay !== 'null' && rawNewDay !== 'undefined') {
+                        const parsedDay = typeof result.newDay === 'number' ? result.newDay : parseInt(rawNewDay.replace(/\D/g, ''), 10);
+                        if (!isNaN(parsedDay) && parsedDay >= 1) {
+                            currentGame.day = parsedDay;
+                            dayWasSet = true;
+                        }
+                    }
+                }
+                if (!dayWasSet && result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
                     if (result.newTimeOfDay === "Ранок" && currentGame.timeOfDay !== "Ранок") {
                         currentGame.day = (currentGame.day || 1) + 1;
-                        updateDayDisplay();
+                        dayWasSet = true;
                     }
                 }
+                if (dayWasSet) updateDayDisplay();
 
                 if (result.newTimeOfDay && TIME_STEPS.includes(result.newTimeOfDay)) {
                     currentGame.timeOfDay = result.newTimeOfDay;
@@ -2307,9 +2705,20 @@ ${formatRecentHistory(8)}
             }
 
             currentOptions = [];
-            // Clear pending new chars — player is sending a message
+            // Sending a player message closes the temporary deletion window.
             pendingNewCharIds = [];
-            currentGame.messages.push({ type: 'user', text: text });
+            pendingManualCharIds = [];
+            pendingManualLocationIds = [];
+            currentGame.characters.forEach(c => {
+                if (c.pendingManualDeletion) delete c.pendingManualDeletion;
+            });
+            if (Array.isArray(currentGame.locations)) {
+                currentGame.locations.forEach(l => {
+                    if (l.pendingManualDeletion) delete l.pendingManualDeletion;
+                });
+            }
+            const stateSnapshot = captureWorldStateSnapshot();
+            currentGame.messages.push({ type: 'user', text: text, stateSnapshot: stateSnapshot });
             inputArea.value = '';
             inputArea.style.height = 'auto';
             renderMessages('bottom');
@@ -2388,6 +2797,7 @@ ${formatRecentHistory(5)}
         /* Global Init */
         window.onload = async () => {
             initTheme();
+            initSidebarHeaderState();
             loadApiKey();
             loadSelectedModel();
             await initDB();
