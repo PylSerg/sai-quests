@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk-UA">
 
 <head>
     <meta charset="UTF-8">
@@ -351,9 +351,12 @@
             border: 1px solid var(--border-color);
             padding: 8px 12px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 18px;
+            font-style: italic;
             cursor: pointer;
             text-align: left;
+            hyphens: auto;
+            white-space: pre-wrap;
             transition: all 0.2s;
         }
 
@@ -512,8 +515,14 @@
             border-left: 3px solid var(--accent-color);
             align-self: flex-start;
             width: 100%;
-            font-style: italic;
+            font-style: normal;
+            font-size: 18px;
             color: var(--text-color);
+            text-align: left;
+            hyphens: auto;
+            overflow-wrap: break-word;
+            word-spacing: normal;
+            white-space: pre-wrap;
         }
 
         .message.character {
@@ -653,7 +662,12 @@
         }
 
         .char-text {
+            font-size: 18px;
+            text-align: left;
+            hyphens: auto;
+            overflow-wrap: break-word;
             white-space: pre-wrap;
+            word-spacing: 0px;
         }
 
         .btn-edit-msg {
@@ -734,18 +748,17 @@
             <div class="row" style="justify-content: space-between;">
                 <strong>sAI Quests</strong>
                 <div class="row" style="gap: 6px;">
-                    <button class="btn-round" onclick="toggleSidebarHeader()" id="sidebarHeaderToggleBtn"
-                        title="Згорнути/розгорнути панель">▲</button>
                     <button class="btn-round" onclick="toggleTheme()" id="themeToggleBtn"
                         title="Переключити тему">☀️</button>
+                    <button class="btn-round" onclick="toggleSidebarHeader()" id="sidebarHeaderToggleBtn"
+                        title="Згорнути/розгорнути панель">▲</button>
                 </div>
             </div>
 
             <div id="sidebarHeaderBody" class="sidebar-header-body">
                 <div class="form-group">
                     <label>Gemini API Key</label>
-                    <input type="password" id="apiKey" placeholder="Введи свій API Key..."
-                        oninput="saveApiKey(this.value)">
+                    <input type="password" id="apiKey" placeholder="Введи свій API Key..." oninput="saveApiKey(this.value)">
                 </div>
 
                 <div class="form-group">
@@ -762,11 +775,9 @@
                 <div class="row">
                     <select id="gameSelect" onchange="loadSelectedGame()"></select>
                     <button onclick="createNewGame()" title="Створити гру">+</button>
-                    <button onclick="exportCurrentGame()" title="Експорт у JSON">📤</button>
-                    <button onclick="document.getElementById('importFileInput').click()"
-                        title="Імпорт з JSON">📥</button>
-                    <input type="file" id="importFileInput" accept=".json" style="display:none"
-                        onchange="importGame(this)">
+                    <button onclick="exportCurrentGame()" title="Експорт у JSON">💾</button>
+                    <button onclick="document.getElementById('importFileInput').click()" title="Імпорт з JSON">📥</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importGame(this)">
                     <button class="danger" onclick="deleteCurrentGame()" title="Видалити гру">🗑</button>
                 </div>
             </div>
@@ -798,13 +809,15 @@
                 <div class="card-header">🌍 Оточення та Світ</div>
                 <div class="form-group">
                     <label>Назва локації</label>
-                    <input type="text" id="stateLocationName" placeholder="Назва поточної локації"
-                        onchange="updateGameState()">
+                    <input type="text" id="stateLocationName" placeholder="Назва поточної локації" onchange="updateGameState()">
                 </div>
                 <div class="form-group">
                     <label>Опис локації</label>
-                    <textarea rows="4" id="stateLocationDescription" placeholder="Детальний опис поточної локації"
-                        onchange="updateGameState()"></textarea>
+                    <textarea rows="4" id="stateLocationDescription" placeholder="Детальний опис поточної локації" onchange="updateGameState()"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Сеттинг / атмосфера</label>
+                    <input type="text" id="stateSetting" placeholder="наприклад: середньовіччя, кіберпанк, космос" onchange="updateGameState()">
                 </div>
             </div>
 
@@ -887,7 +900,7 @@
 
         <div class="chat-input-area">
             <div class="input-controls">
-                <textarea id="userInput" rows="1" style="flex: 1; resize: none; overflow-y: auto;"
+                <textarea id="userInput" rows="1" style="flex: 1; resize: none; overflow-y: auto; font-size: 18px;"
                     placeholder="Що ти робиш або кажеш?..." disabled></textarea>
                 <button class="btn-send" id="sendBtn" onclick="sendMessage()" title="Надіслати" disabled>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
@@ -905,6 +918,7 @@
         const SCENARIOS_PRESETS = [
             {
                 title: "Таємниця закинутої таверни",
+                setting: "medieval fantasy",
                 day: 1,
                 locationName: "Запорошена таверна «Чорний Круг»",
                 locationDescription: "Стара напівзруйнована таверна на краю селища. Усередині пахне сирою деревиною, пилом і згаслим вогнищем; це тимчасовий прихисток під час негоди.",
@@ -935,24 +949,100 @@
             return 'person';
         }
 
-        /* Build the pollinations.ai text prompt describing a character's portrait */
-        function buildAvatarPrompt(c) {
+        /* Map common Ukrainian race labels to English words the image model understands better.
+           Falls back to the original text for custom/unknown races. */
+        const RACE_PROMPT_MAP = {
+            'людина': 'human',
+            'ельф': 'elf',
+            'ельфійка': 'elf',
+            'напівельф': 'half-elf',
+            'дворф': 'dwarf',
+            'гном': 'gnome',
+            'орк': 'orc',
+            'напіворк': 'half-orc',
+            'тролль': 'troll',
+            'вампір': 'vampire',
+            'демон': 'demon',
+            'ангел': 'angel',
+            'дракон': 'dragon-like humanoid',
+            'нежить': 'undead',
+            'фея': 'fairy'
+        };
+        function raceToPromptWord(race) {
+            const clean = (race || 'Людина').trim();
+            const mapped = RACE_PROMPT_MAP[clean.toLowerCase()];
+            return mapped || clean;
+        }
+
+        /* Visual-setting keywords for avatars. More specific styles are listed first. */
+        const SETTING_PROMPT_RULES = [
+            { re: /кіберпанк|cyberpunk|неон[ои]?в|synthwave/i, hint: 'cyberpunk setting, neon lights, futuristic street fashion, chrome and rain, no medieval clothing' },
+            { re: /стімпанк|steampunk/i, hint: 'steampunk setting, victorian era with brass gears, goggles, retro-futuristic machines' },
+            { re: /постапокал|post[- ]?apocalyp|wasteland|пуст[еи]л/i, hint: 'post-apocalyptic setting, worn scavenged clothing, dusty wasteland look' },
+            { re: /космічн|sci[- ]?fi|science fiction|космос|space opera|зореліт|футурист/i, hint: 'science fiction setting, futuristic clothing, spacecraft aesthetic' },
+            { re: /вестерн|western|дикий захід/i, hint: 'wild west setting, 19th century american frontier clothing' },
+            { re: /пірат|pirate|кариб/i, hint: 'golden age of piracy setting, 18th century seafaring clothing' },
+            { re: /вікторіан|victorian/i, hint: 'victorian era setting, 19th century clothing' },
+            { re: /готик|gothic|вампірськ/i, hint: 'dark gothic setting, victorian gothic clothing' },
+            { re: /сучасн|modern day|наш час|21 стол/i, hint: 'modern day setting, contemporary clothing, no period costume' },
+            { re: /античн|давн(я|ьогрец)|єгипет|римськ|ancient (greece|rome|egypt)/i, hint: 'ancient historical setting, period-accurate clothing' },
+            { re: /самурай|сьогун|сегун|феодальн(а|ій) япон/i, hint: 'feudal japan setting, period clothing, kimono or samurai attire' },
+            { re: /середньовіч|medieval|фентезі|fantasy|лицар|дворф|таверн|замок|королівств/i, hint: 'medieval fantasy setting, period clothing, no modern items' }
+        ];
+
+        function inferSettingPromptHint(text) {
+            const haystack = (text || '').trim();
+            if (!haystack) return '';
+            const rule = SETTING_PROMPT_RULES.find(r => r.re.test(haystack));
+            return rule ? rule.hint : '';
+        }
+
+        /* Prefer the game's stored setting; otherwise guess from title/location/objectives. */
+        function getAvatarSettingHint(game) {
+            const g = game || currentGame;
+            if (!g) return '';
+            const stored = (g.setting || '').trim();
+            const corpus = [
+                stored,
+                g.title,
+                g.objectives,
+                g.locationName,
+                g.locationDescription,
+                g.location
+            ].filter(Boolean).join(' | ');
+            const inferred = inferSettingPromptHint(corpus);
+            if (inferred) return inferred;
+            if (stored) return `${stored} setting, clothing and look matching this world`;
+            return '';
+        }
+
+        /* Build the pollinations.ai text prompt describing a character's portrait.
+           Only visual traits are used (race, gender, age, appearance) — personality is
+           deliberately excluded since it's non-visual and tends to confuse image models.
+           English portrait/quality keywords are added to improve accuracy and likeness. */
+        function buildAvatarPrompt(c, game) {
             const genderWord = genderToPromptWord(c && c.gender);
             const age = (c && c.age) || 25;
-            const race = ((c && c.race) || 'Людина').trim();
-            const personality = ((c && c.personality) || '').trim();
+            const race = raceToPromptWord(c && c.race);
             const appearance = ((c && c.appearance) || '').trim();
-            const promptParts = ['portrait', genderWord, `${age} years old`, race];
-            if (appearance) promptParts.push(appearance);
-            if (personality) promptParts.push(personality);
+            const settingHint = getAvatarSettingHint(game);
+            const promptParts = [
+                'close-up portrait photo of a single person',
+                `${age}-year-old ${genderWord} ${race}`,
+                appearance,
+                settingHint,
+                'face clearly visible, looking at camera, detailed facial features, natural lighting, photorealistic, high quality, sharp focus'
+            ];
             return promptParts.filter(Boolean).join(', ');
         }
 
-        /* Build a full pollinations.ai image URL for a character, with a random seed */
-        function buildAvatarUrl(c) {
-            const prompt = buildAvatarPrompt(c);
+        /* Build a full pollinations.ai image URL for a character, with a random seed.
+           Generated at a higher resolution than displayed for better detail; the browser
+           scales it down to fit the avatar. */
+        function buildAvatarUrl(c, game) {
+            const prompt = buildAvatarPrompt(c, game);
             const seed = Math.floor(Math.random() * 2147483647);
-            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=128&height=128&model=flux&nologo=true&seed=${seed}`;
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&model=flux&nologo=true&seed=${seed}`;
         }
 
         let db = null;
@@ -1367,10 +1457,12 @@
                 try {
                     const promptGen = `Створи початковий світ та 2 головних персонажів для квесту: "${title}". Поверни JSON з полями:
                     {
+                      "setting": "короткий візуальний стиль світу англійською для портретів (medieval fantasy / cyberpunk / post-apocalyptic / space opera / modern day / victorian / wild west / тощо)",
                       "locationName": "назва локації", "locationDescription": "детальний опис локації", "timeOfDay": "Ранок або День або Вечір або Ніч", "objectives": "цілі", "memory": "пам'ять",
                       "maleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 25, "role": "", "personality": "", "appearance": "", "seed": "m1" },
                       "femaleCharacter": { "name": "", "surname": "", "race": "Людина / Ельф / інша", "age": 24, "role": "", "personality": "", "appearance": "", "seed": "f1" }
-                    }`;
+                    }
+                    Зовнішність персонажів має відповідати setting (одяг, зброя, деталі епохи).`;
 
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
                         method: 'POST',
@@ -1394,6 +1486,7 @@
 
             if (!gameData) {
                 gameData = {
+                    setting: defaultPreset.setting,
                     locationName: defaultPreset.locationName || defaultPreset.location,
                     locationDescription: defaultPreset.locationDescription || defaultPreset.location,
                     location: defaultPreset.location,
@@ -1413,6 +1506,7 @@
 
             const newGame = {
                 title: title,
+                setting: (gameData.setting || inferSettingPromptHint(title) || '').trim(),
                 day: 1,
                 locationName: locationName,
                 locationDescription: locationDescription,
@@ -1438,12 +1532,12 @@
             const maleChar = {
                 id: pId, name: gameData.maleCharacter.name, surname: gameData.maleCharacter.surname, race: gameData.maleCharacter.race || "Людина", gender: "Чоловіча", age: gameData.maleCharacter.age, role: gameData.maleCharacter.role, personality: gameData.maleCharacter.personality, appearance: gameData.maleCharacter.appearance, relations: {}
             };
-            maleChar.avatar = buildAvatarUrl(maleChar);
+            maleChar.avatar = buildAvatarUrl(maleChar, newGame);
 
             const femaleChar = {
                 id: cId, name: gameData.femaleCharacter.name, surname: gameData.femaleCharacter.surname, race: gameData.femaleCharacter.race || "Людина", gender: "Жіноча", age: gameData.femaleCharacter.age, role: gameData.femaleCharacter.role, personality: gameData.femaleCharacter.personality, appearance: gameData.femaleCharacter.appearance, relations: { [pId]: 45 }
             };
-            femaleChar.avatar = buildAvatarUrl(femaleChar);
+            femaleChar.avatar = buildAvatarUrl(femaleChar, newGame);
 
             newGame.characters = [maleChar, femaleChar];
 
@@ -1501,6 +1595,8 @@
             currentGame.location = locationName; // compatibility with existing game logic/imports
             if (legacyLocationInput) legacyLocationInput.value = locationName;
             currentGame.timeOfDay = document.getElementById('stateTimeOfDay').value;
+            const settingInput = document.getElementById('stateSetting');
+            if (settingInput) currentGame.setting = settingInput.value.trim();
             currentGame.objectives = document.getElementById('stateObjectives').value;
             currentGame.memory = document.getElementById('stateMemory').value;
             currentGame.playerCharId = document.getElementById('playerCharSelect').value;
@@ -1546,6 +1642,8 @@
             if (stateLocationName) stateLocationName.value = currentGame.locationName || currentGame.location || '';
             if (stateLocationDescription) stateLocationDescription.value = currentGame.locationDescription || currentGame.location || '';
             if (legacyStateLocation) legacyStateLocation.value = currentGame.location || currentGame.locationName || '';
+            const stateSetting = document.getElementById('stateSetting');
+            if (stateSetting) stateSetting.value = currentGame.setting || '';
             document.getElementById('stateTimeOfDay').value = currentGame.timeOfDay || 'День';
             document.getElementById('stateObjectives').value = currentGame.objectives || '';
             document.getElementById('stateMemory').value = currentGame.memory || '';
@@ -1684,7 +1782,7 @@
                         <div class="form-group">
                             <label>Аватар</label>
                             <div class="row">
-                                <input type="text" value="${c.avatar && !c.avatar.startsWith('data:') ? c.avatar : ''}" onchange="updateCharData('${c.id}', 'avatar', this.value)">
+                                <input style="width: 100%" type="text" value="${c.avatar && !c.avatar.startsWith('data:') ? c.avatar : ''}" onchange="updateCharData('${c.id}', 'avatar', this.value)">
                                 <input type="file" accept="image/*" style="display:none;" id="file_${c.id}" onchange="uploadAvatarFile('${c.id}', this)">
                                 <button type="button" style="padding:4px 8px; font-size:12px;" onclick="document.getElementById('file_${c.id}').click()" title="Завантажити файл">📁</button>
                                 <button type="button" style="padding:4px 8px; font-size:12px;" onclick="generateAvatar('${c.id}')" title="Згенерувати аватар">🎨</button>
@@ -1710,6 +1808,9 @@
             if (!currentGame) return;
             const c = currentGame.characters.find(char => char.id === charId);
             if (!c) return;
+
+            const charName = `${c.name || ''} ${c.surname || ''}`.trim() || 'цього персонажа';
+            if (!confirm(`Згенерувати новий аватар для "${charName}"? Поточний аватар буде замінено.`)) return;
 
             c.avatar = buildAvatarUrl(c);
             dbSaveGame(currentGame);
@@ -2755,12 +2856,16 @@ ${formatRecentHistory(8)}
 
             setStatus(true, "Генерація 5 варіантів дій...");
 
-            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", personality: "" };
-            const promptText = `На основі поточної ситуації в грі (Поточний день: День ${currentGame.day || 1}, Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (${playerChar.personality || 'звичайний'}). 
+            const playerChar = currentGame.characters.find(c => c.id === currentGame.playerCharId) || { name: "Гравець", personality: "", gender: "", age: "", role: "", appearance: "" };
+            const promptText = `На основі поточної ситуації в грі (Поточний день: День ${currentGame.day || 1}, Локація: ${currentGame.location}, Час доби: ${currentGame.timeOfDay}, Пам'ять: ${currentGame.memory}) запропонуй рівно 5 різних можливих варіантів дій або реплік для мого персонажа ${playerChar.name} (стать: ${playerChar.gender || 'не вказана'}, вік: ${playerChar.age || 'не вказаний'}, роль/фах: ${playerChar.role || 'не вказана'}, зовнішність: ${playerChar.appearance || 'не вказана'}, характер: ${playerChar.personality || 'звичайний'}). 
 Останній контекст:
 ${formatRecentHistory(5)}
 
-Поверни JSON: { "options": ["варіант 1", "варіант 2", "варіант 3", "варіант 4", "варіант 5"] }`;
+ВАЖЛИВО: Кожен варіант ОБОВ'ЯЗКОВО пиши від першої особи (від імені гравця), так, ніби це сам гравець описує свою дію або репліку. Наприклад: "Я підходжу ближче і питаю, що тут сталося." або "Я кажу: «Довірся мені»." Не використовуй третю особу (не пиши "Персонаж підходить..." чи "${playerChar.name} питає...").
+ОБОВ'ЯЗКОВО узгоджуй рід дієслів минулого/доконаного виду з статтю персонажа (${playerChar.gender || 'не вказана'}): якщо стать "Чоловіча" — використовуй чоловічий рід (напр. "я підійшов", "я сказав", "я зробив"); якщо стать "Жіноча" — жіночий рід (напр. "я підійшла", "я сказала", "я зробила").
+Враховуй вік, роль/фах та зовнішність персонажа: варіанти дій мають відповідати його можливостям, манері поведінки та тому, як він фізично міг би діяти в цій ситуації (наприклад, персонаж у важких обладунках навряд чи непомітно прокрадеться, а досвідчений майстер певного фаху може запропонувати дію, пов'язану з цим фахом).
+
+Поверни JSON: { "options": ["варіант 1 від першої особи", "варіант 2 від першої особи", "варіант 3 від першої особи", "варіант 4 від першої особи", "варіант 5 від першої особи"] }`;
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
@@ -2807,3 +2912,4 @@ ${formatRecentHistory(5)}
 </body>
 
 </html>
+
